@@ -34,51 +34,65 @@ public:
 	UFUNCTION()
 	void HideSniperModeUI();
 
+	UPROPERTY(EditDefaultsOnly, Category = "MY|Anim")
+	class UAnimBlueprint* PlayerAnimBlueprint;
+
+	UPROPERTY(EditAnywhere, Category = "MY|PlayerSetting")
+	float walkSpeed = 200;
+
+	UPROPERTY(EditAnywhere, Category = "MY|PlayerSetting")
+	float runSpeed = 600;
+
+	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
+	class UInputAction* Ia_Run;
+
+	void InputRun();
+
 private:
-	UPROPERTY(VisibleAnywhere, Category = Camera)
+	UPROPERTY(VisibleAnywhere, Category = "MY|Camera")
 	class USpringArmComponent* SpringArmComp = nullptr;
 
-	UPROPERTY(VisibleAnywhere, Category = Camera)
+	UPROPERTY(VisibleAnywhere, Category = "MY|Camera")
 	class UCameraComponent* FollowCamera = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = Input)
+	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
 	class UInputMappingContext* InputMapping = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = Input)
+	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
 	class UInputAction* ActionLook = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = Input)
+	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
 	class UInputAction* ActionJump = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = Input)
+	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
 	class UInputAction* ActionMove = nullptr;
 
 	//Gun
-	UPROPERTY(EditDefaultsOnly, Category = Gun)
+	UPROPERTY(EditDefaultsOnly, Category = "MY|Gun")
 	class USkeletalMeshComponent* GunMeshComp;
 
-	UPROPERTY(EditDefaultsOnly, Category = Gun)
+	UPROPERTY(EditDefaultsOnly, Category = "MY|Gun")
 	TSubclassOf<class ABullet> bulletFactory;
 
-	UPROPERTY(EditDefaultsOnly, Category = Input)
+	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
 	class UInputAction* ActionFire;
 
-	UPROPERTY(EditDefaultsOnly, Category = Gun)
+	UPROPERTY(EditDefaultsOnly, Category = "MY|Gun")
 	class UStaticMeshComponent* SniperGunMeshComp;
 
-	UPROPERTY(EditDefaultsOnly, Category = Input)
+	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
 	class UInputAction* ActionSwitchWeapon;
 
 	void InputFire(const struct FInputActionValue& inputValue);
 	void InputSwitchWeapon(const struct FInputActionValue& inputValue);
 
-	UPROPERTY(EditAnywhere, Category = Gun)
+	UPROPERTY(EditAnywhere, Category = "MY|Gun")
 	TSubclassOf<class UUserWidget> SniperUIFactory;
 
 	UPROPERTY()
 	class UUserWidget* SniperModeUI = nullptr;
 
-	UPROPERTY(EditAnywhere, Category = Gun)
+	UPROPERTY(EditAnywhere, Category = "MY|Gun")
 	TSubclassOf<class UUserWidget> HandGunUIFactory;
 
 	UPROPERTY()
@@ -86,7 +100,7 @@ private:
 
 	bool bIsSniperMode = false;
 
-	UPROPERTY(EditDefaultsOnly, Category = GunFire)
+	UPROPERTY(EditDefaultsOnly, Category = "MY|GunFire")
 	class UNiagaraSystem* BulleftEffectFactory;
 
 	///

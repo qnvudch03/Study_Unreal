@@ -13,6 +13,10 @@
 #include <NiagaraFunctionLibrary.h>
 #include <NiagaraComponent.h>
 #include <Kismet/GameplayStatics.h>
+#include <Animation/AnimBlueprint.h>
+#include <Animation//AnimInstance.h>
+#include <GameFramework/CharacterMovementComponent.h>
+#include "PlayerAnimInstance.h"
 
 // Sets default values
 ATPSPlayer::ATPSPlayer()
@@ -20,23 +24,33 @@ ATPSPlayer::ATPSPlayer()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	ConstructorHelpers::FObjectFinder<USkeletalMesh> Ue5_Manny(TEXT("/Script/Engine.SkeletalMesh'/Game/Assets/Characters/Mannequins/Meshes/SKM_Manny.SKM_Manny'"));
+	ConstructorHelpers::FObjectFinder<USkeletalMesh> Ue4_Manny(TEXT("/Script/Engine.SkeletalMesh'/Game/Assets/Animation/SK_Mannequin.SK_Mannequin'"));
+	ConstructorHelpers::FClassFinder<UAnimInstance> AnimBP(TEXT("/Script/Engine.AnimBlueprint'/Game/Assets/Animation/ABP_PlayerAnimBP.ABP_PlayerAnimBP_C'"));
 
-	if (Ue5_Manny.Succeeded())
+	if (Ue4_Manny.Succeeded())
 	{
-		GetMesh()->SetSkeletalMesh(Ue5_Manny.Object);
+		GetMesh()->SetSkeletalMesh(Ue4_Manny.Object);
 		GetMesh()->SetRelativeLocationAndRotation(FVector(0, 0, -90), FRotator(0, 0, 0));
+
+		if (AnimBP.Class)
+		{
+			GetMesh()->SetAnimClass(AnimBP.Class);
+		}
 	}
 
 	{
 		SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringAram"));
 		SpringArmComp->SetupAttachment(RootComponent);
-		//SpringArmComp->SetRelativeRotation(FRotator(0, 0, 90));
+		SpringArmComp->SetRelativeRotation(FRotator(0, 0, -90));
 		SpringArmComp->SocketOffset = FVector(0, 70, 90);
 		SpringArmComp->TargetArmLength = 500.0f;
+		SpringArmComp->bUsePawnControlRotation = true;
 
 		FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("Follow Camera"));
 		FollowCamera->SetupAttachment(SpringArmComp);
+		FollowCamera->bUsePawnControlRotation = false;
+
+		bUseControllerRotationYaw = true;
 	}
 
 	{
@@ -47,17 +61,19 @@ ATPSPlayer::ATPSPlayer()
 		{
 			GunMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GunMeshComp"));
 			GunMeshComp->SetSkeletalMesh(GunMesh.Object);
-			GunMeshComp->SetupAttachment(GetMesh());
+			GunMeshComp->SetupAttachment(GetMesh(),TEXT("hand_rSocket"));
 
-			GunMeshComp->SetRelativeLocation(FVector(-14, 52, 120));
+			GunMeshComp->SetRelativeLocation(FVector(-17, 10, -3));
+			GunMeshComp->SetRelativeRotation(FRotator(0, 90, 0));
 		}
 
 		if (SniperGunMesh.Object)
 		{
 			SniperGunMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SniperGunMeshComp"));
 			SniperGunMeshComp->SetStaticMesh(SniperGunMesh.Object);
-			SniperGunMeshComp->SetupAttachment(GetMesh());
-			SniperGunMeshComp->SetRelativeLocation(FVector(-22, 55, 150));
+			SniperGunMeshComp->SetupAttachment(GetMesh(), TEXT("hand_rSocket"));
+			SniperGunMeshComp->SetRelativeLocation(FVector(-42, 7, 1));
+			SniperGunMeshComp->SetRelativeRotation(FRotator(0, 90, 0));
 			SniperGunMeshComp->SetRelativeScale3D(FVector(0.15f));
 
 			SniperGunMeshComp->SetVisibility(false);
@@ -74,6 +90,8 @@ void ATPSPlayer::BeginPlay()
 	Super::BeginPlay();
 
 	APlayerController* PlayerController = Cast<APlayerController>(Controller);
+
+	GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
 
 	if (PlayerController)
 	{
@@ -117,6 +135,11 @@ void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 		pc->BindAction(ActionJump, ETriggerEvent::Triggered, this, &ATPSPlayer::InputJump);
 		pc->BindAction(ActionFire, ETriggerEvent::Triggered, this, &ATPSPlayer::InputFire);
 		pc->BindAction(ActionSwitchWeapon, ETriggerEvent::Triggered, this, &ATPSPlayer::InputSwitchWeapon);
+
+		pc->BindAction(Ia_Run, ETriggerEvent::Started, this, &ATPSPlayer::InputRun);
+		pc->BindAction(Ia_Run, ETriggerEvent::Completed, this, &ATPSPlayer::InputRun);
+
+		//pc->BindAction(Ia_Run, ETriggerEvent::Triggered, this, &ATPSPlayer::InputRun);
 	}
 
 }
@@ -147,8 +170,31 @@ void ATPSPlayer::HideSniperModeUI()
 	FollowCamera->SetFieldOfView(90);
 }
 
+void ATPSPlayer::InputRun()
+{
+	auto movement = GetCharacterMovement();
+
+	if (movement->MaxWalkSpeed > walkSpeed)
+	{
+		movement->MaxWalkSpeed = walkSpeed;
+	}
+
+	else
+	{
+		movement->MaxWalkSpeed = runSpeed;
+	}
+}
+
 void ATPSPlayer::InputFire(const FInputActionValue& inputValue)
 {
+
+	auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	
+	if (anim)
+	{
+		anim->PlayAttackAnim();
+	}
+
 	if (bIsSniperMode)
 	{
 		FVector startPos = FollowCamera->GetComponentLocation();
@@ -292,4 +338,6 @@ void ATPSPlayer::CheckCameraVisible()
 		GetMesh()->SetVisibility(true);
 	}
 }
+
+
 
