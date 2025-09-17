@@ -114,6 +114,12 @@ private:
 
 	void InputJump(const struct FInputActionValue& inputValue);
 
+	UPROPERTY(EditDefaultsOnly, Category = "MY|CameraShake")
+	TSubclassOf<UCameraShakeBase> CameraShake;
+
+	UPROPERTY(EditDefaultsOnly, Category = "MY|GunSound")
+	class USoundWave* BuletSound;
+
 	float CameraMinDistance = 35;
 	void CheckCameraVisible();
 

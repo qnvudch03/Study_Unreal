@@ -17,6 +17,9 @@
 #include <Animation//AnimInstance.h>
 #include <GameFramework/CharacterMovementComponent.h>
 #include "PlayerAnimInstance.h"
+#include <Camera/CameraShakeBase.h>
+#include <Sound/SoundWave.h>
+#include <Sound/SoundBase.h>
 
 // Sets default values
 ATPSPlayer::ATPSPlayer()
@@ -77,6 +80,14 @@ ATPSPlayer::ATPSPlayer()
 			SniperGunMeshComp->SetRelativeScale3D(FVector(0.15f));
 
 			SniperGunMeshComp->SetVisibility(false);
+		}
+	}
+
+	{
+		ConstructorHelpers::FObjectFinder<USoundWave> GunFireSound(TEXT("/Script/Engine.SoundWave'/Game/Assets/FPWeapon/Sniper/Rifle.Rifle'"));
+		if (GunFireSound.Object)
+		{
+			BuletSound = GunFireSound.Object;
 		}
 	}
 
@@ -188,12 +199,21 @@ void ATPSPlayer::InputRun()
 void ATPSPlayer::InputFire(const FInputActionValue& inputValue)
 {
 
-	auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
-	
-	if (anim)
 	{
-		anim->PlayAttackAnim();
+		auto controller = GetWorld()->GetFirstPlayerController();
+		controller->PlayerCameraManager->StartCameraShake(CameraShake);
 	}
+
+	{
+		auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+
+		if (anim)
+		{
+			anim->PlayAttackAnim();
+		}
+	}
+	
+	UGameplayStatics::PlaySound2D(GetWorld(), BuletSound);
 
 	if (bIsSniperMode)
 	{

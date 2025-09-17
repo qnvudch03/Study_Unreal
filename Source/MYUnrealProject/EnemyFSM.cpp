@@ -5,6 +5,7 @@
 
 #include "TPSGame/TPSPlayer.h"
 #include "TPSGame/Enemy.h"
+#include "TPSGame/EnemyAnim.h"
 #include <Kismet/GameplayStatics.h>
 
 
@@ -31,7 +32,9 @@ void UEnemyFSM::BeginPlay()
 	Target = Cast<ATPSPlayer>(targetPlayer);
 
 	Me = Cast<AEnemy>(GetOwner());
-	
+
+	EnemyAnim = Cast<UEnemyAnim>(Me->GetMesh()->GetAnimInstance());
+
 }
 
 
@@ -39,6 +42,9 @@ void UEnemyFSM::BeginPlay()
 void UEnemyFSM::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (!bIsAlive)
+		return;
 
 	AttackTimer -= DeltaTime;
 
@@ -79,6 +85,8 @@ void UEnemyFSM::IdleState()
 	{
 		State = EEnemyState::Move;
 		CurrentIdleTime = 0.0f;
+
+		EnemyAnim->EnemyState = State;
 	}
 }
 
@@ -88,33 +96,46 @@ void UEnemyFSM::MoveState()
 
 	FVector moveDir = targetLocation - Me->GetActorLocation();
 
+	FVector nomalizedVec = moveDir.GetSafeNormal();
+	FVector forwardVec = GetOwner()->GetActorForwardVector();
+
+
 	if (moveDir.Size() < AttackRange && AttackTimer <= 0.0f)
 	{
-		State = EEnemyState::Attack;
-
+		if (FVector::DotProduct(nomalizedVec, forwardVec) > 0.3)
+		{
+			State = EEnemyState::Attack;
+		}
 	}
+
 
 	else
 	{
+		State = EEnemyState::Move;
+		EnemyAnim->EnemyState = State;
+
 		Me->AddMovementInput(moveDir);
 		moveDir = FVector::Zero();
 	}
-	
+
 }
 
 void UEnemyFSM::AttackState()
 {
 	AttackTimer = AttackDuration;
 
-	//GEngine->AddOnScreenDebugMessage(0, 1, FColor::Cyan, "Attack!!");
-	State = EEnemyState::Move;
-	UE_LOG(LogTemp, Log, TEXT("Attack!"));
+	EnemyAnim->EnemyState = State;
+	EnemyAnim->bAttackPlay = true;
+
+	GEngine->AddOnScreenDebugMessage(0, 1, FColor::Cyan, "Attack!!");
+	//State = EEnemyState::Move;
 
 }
 
 void UEnemyFSM::DamageState()
 {
 	CurrentDamageDelayTime -= GetWorld()->GetDeltaSeconds();
+	EnemyAnim->EnemyState = EEnemyState::Damage;
 
 	if (CurrentDamageDelayTime <= 0)
 	{
@@ -124,7 +145,15 @@ void UEnemyFSM::DamageState()
 
 void UEnemyFSM::DeadState()
 {
-	Me->Destroy();
+	bIsAlive = false;
+
+	EnemyAnim->PlayDamageAnim(FName("Die"));
+
+}
+
+void UEnemyFSM::onAttackAnimEnd()
+{
+	State = EEnemyState::Idle;
 }
 
 void UEnemyFSM::OnDamagedProcess()
@@ -134,14 +163,24 @@ void UEnemyFSM::OnDamagedProcess()
 		return;
 	}
 
-	HP--;
-	State = EEnemyState::Damage;
-
 	if (HP <= 0)
 	{
 		State = EEnemyState::Die;
+		return;
 	}
-	
+
+	HP--;
+	State = EEnemyState::Damage;
+
+	int32 index = FMath::RandRange(0, 1);
+	FString SectionName = FString::Printf(TEXT("Damage%d"), index);
+	EnemyAnim->PlayDamageAnim(FName(*SectionName));
+
 	CurrentDamageDelayTime = DamageDelayTime;
+}
+
+void UEnemyFSM::OnDie()
+{
+	GetOwner()->Destroy();
 }
 

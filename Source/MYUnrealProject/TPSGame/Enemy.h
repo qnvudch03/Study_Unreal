@@ -30,12 +30,12 @@ public:
 	/*UPROPERTY(EditDefaultsOnly, Category = "Enemy|Collider")
 	TObjectPtr<UCapsuleComponent> Collider;*/
 
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy|BodyMesh")
+	UPROPERTY(EditDefaultsOnly, Category = "MY|BodyMesh")
 	//TSubclassOf<USkeletalMeshComponent> BodySkeletalMesh;
 	TObjectPtr<USkeletalMeshComponent> BodySkeletalMesh;
 	//USkeletalMeshComponent* BodySkeletalMesh = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Enemy|FSM")
+	UPROPERTY(EditAnywhere, Category = "MY|FSM")
 	TObjectPtr<class UEnemyFSM> FsmComp;
 
 };

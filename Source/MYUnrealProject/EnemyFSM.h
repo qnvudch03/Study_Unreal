@@ -72,7 +72,15 @@ public:
 	float DamageDelayTime = 2.0f;
 
 	float CurrentDamageDelayTime = 0.0f;
+	void onAttackAnimEnd();
 
 	void OnDamagedProcess();
+
+	UPROPERTY()
+	class UEnemyAnim* EnemyAnim;
+
+	bool bIsAlive = true;
+
+	void OnDie();
 		
 };

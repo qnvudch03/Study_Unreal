@@ -8,6 +8,8 @@
 #include <Components/CapsuleComponent.h>
 #include <GameFramework/CharacterMovementComponent.h>
 
+#include "EnemyAnim.h"
+
 
 // Sets default values
 AEnemy::AEnemy()
@@ -21,7 +23,17 @@ AEnemy::AEnemy()
 	{
 		GetMesh()->SetSkeletalMesh(EnemySkeleton.Object);
 		GetMesh()->SetRelativeLocation(FVector(0, 0, -90));
+		GetMesh()->SetRelativeRotation(FRotator(0, -90, 00));
 		GetCapsuleComponent()->SetCapsuleHalfHeight(90);
+	}
+
+	{
+		ConstructorHelpers::FClassFinder<UEnemyAnim> EnemyAnimBP(TEXT("/Script/Engine.AnimBlueprint'/Game/TPSGame/Animation/Enemy/ABP_EnemyAnim.ABP_EnemyAnim_C'"));
+
+		if (EnemyAnimBP.Class)
+		{
+			GetMesh()->SetAnimInstanceClass(EnemyAnimBP.Class);
+		}
 	}
 
 	{
