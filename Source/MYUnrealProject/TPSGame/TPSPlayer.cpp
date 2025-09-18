@@ -10,16 +10,14 @@
 #include <EnhancedInputSubsystems.h>
 #include <InputActionValue.h>
 #include <Blueprint/UserWidget.h>
-#include <NiagaraFunctionLibrary.h>
-#include <NiagaraComponent.h>
 #include <Kismet/GameplayStatics.h>
 #include <Animation/AnimBlueprint.h>
 #include <Animation//AnimInstance.h>
 #include <GameFramework/CharacterMovementComponent.h>
 #include "PlayerAnimInstance.h"
-#include <Camera/CameraShakeBase.h>
-#include <Sound/SoundWave.h>
 #include <Sound/SoundBase.h>
+#include "PlayerMoveComp.h"
+#include "WeaponComponent.h"
 
 // Sets default values
 ATPSPlayer::ATPSPlayer()
@@ -83,12 +81,10 @@ ATPSPlayer::ATPSPlayer()
 		}
 	}
 
+	//Components
 	{
-		ConstructorHelpers::FObjectFinder<USoundWave> GunFireSound(TEXT("/Script/Engine.SoundWave'/Game/Assets/FPWeapon/Sniper/Rifle.Rifle'"));
-		if (GunFireSound.Object)
-		{
-			BuletSound = GunFireSound.Object;
-		}
+		MoveComp = CreateDefaultSubobject<UPlayerMoveComp>(TEXT("MoveComp"));
+		WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComp"));
 	}
 
 	JumpMaxCount = 2;
@@ -139,13 +135,12 @@ void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 	UEnhancedInputComponent* pc = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
 
+	MoveComp->SetupInputBinding(pc);
+	WeaponComp->SetupInputBinding(pc);
+
 	if (pc)
 	{
-		pc->BindAction(ActionLook, ETriggerEvent::Triggered, this, &ATPSPlayer::Look);
-		pc->BindAction(ActionMove, ETriggerEvent::Triggered, this, &ATPSPlayer::Move);
-		pc->BindAction(ActionJump, ETriggerEvent::Triggered, this, &ATPSPlayer::InputJump);
-		pc->BindAction(ActionFire, ETriggerEvent::Triggered, this, &ATPSPlayer::InputFire);
-		pc->BindAction(ActionSwitchWeapon, ETriggerEvent::Triggered, this, &ATPSPlayer::InputSwitchWeapon);
+		
 
 		pc->BindAction(Ia_Run, ETriggerEvent::Started, this, &ATPSPlayer::InputRun);
 		pc->BindAction(Ia_Run, ETriggerEvent::Completed, this, &ATPSPlayer::InputRun);
@@ -196,168 +191,12 @@ void ATPSPlayer::InputRun()
 	}
 }
 
-void ATPSPlayer::InputFire(const FInputActionValue& inputValue)
-{
-
-	{
-		auto controller = GetWorld()->GetFirstPlayerController();
-		controller->PlayerCameraManager->StartCameraShake(CameraShake);
-	}
-
-	{
-		auto anim = Cast<UPlayerAnimInstance>(GetMesh()->GetAnimInstance());
-
-		if (anim)
-		{
-			anim->PlayAttackAnim();
-		}
-	}
-	
-	UGameplayStatics::PlaySound2D(GetWorld(), BuletSound);
-
-	if (bIsSniperMode)
-	{
-		FVector startPos = FollowCamera->GetComponentLocation();
-		FVector endPos = startPos + FollowCamera->GetForwardVector() * 5000;
-
-		FHitResult hitInfo;
-
-		FCollisionQueryParams params;
-
-		params.AddIgnoredActor(this);
-
-		bool bHit = GetWorld()->LineTraceSingleByChannel(hitInfo, startPos, endPos, ECC_weaponTrace, params);
-
-		if (bHit)
-		{
-			auto hitComp = hitInfo.GetComponent();
-
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-				GetWorld(),
-				BulleftEffectFactory,
-				hitInfo.Location,
-				FRotator::ZeroRotator
-			);
-
-			if (hitComp && hitComp->IsSimulatingPhysics())
-			{
-				FVector dir = (endPos - startPos).GetSafeNormal();
-
-				FVector force = dir * hitComp->GetMass() * 500000;
-
-				hitComp->AddForceAtLocation(force, hitInfo.ImpactPoint);
-			}
-
-			auto enemy = hitInfo.GetActor()->GetDefaultSubobjectByName(TEXT("FSM"));
-			if (enemy)
-			{
-				auto enemyFSM = Cast<UEnemyFSM>(enemy);
-				enemyFSM->OnDamagedProcess();
-			}
-		}
-
-	}
-
-	else
-	{
-		FTransform firePosition = GunMeshComp->GetSocketTransform(TEXT("FirePosition"));
-		GetWorld()->SpawnActor<ABullet>(bulletFactory, firePosition);
-	}
-	
-}
-
-void ATPSPlayer::InputSwitchWeapon(const FInputActionValue& inputValue)
-{
-	if (GunMeshComp->IsVisible())
-	{
-		GunMeshComp->SetVisibility(false);
-		SniperGunMeshComp->SetVisibility(true);
-
-		ShowSniperModeUI();
-
-		bIsSniperMode = true;
-
-		return;
-	}
-
-	else if (SniperGunMeshComp->IsVisible())
-	{
-		SniperGunMeshComp->SetVisibility(false);
-		GunMeshComp->SetVisibility(true);
-
-		HideSniperModeUI();
-
-		bIsSniperMode = false;
-
-		return;
-	}
-}
-
-void ATPSPlayer::Look(const FInputActionValue& inputValue)
-{
-	FVector2D value = inputValue.Get<FVector2D>();
-
-	AddControllerYawInput(value.X);
-
-	FRotator CurrentRot = FollowCamera->GetRelativeRotation();
-	CurrentRot.Pitch += value.Y;
-
-	if (CurrentRot.Pitch > 25)
-	{
-		CurrentRot.Pitch = 25;
-	}
-
-	else if (CurrentRot.Pitch < -15)
-	{
-		CurrentRot.Pitch = -15;
-	}
-
-	FollowCamera->SetRelativeRotation(CurrentRot);
-
-	CheckCameraVisible();
-
-}
-
-void ATPSPlayer::Move(const FInputActionValue& inputValue)
-{
-	FVector2D value = inputValue.Get<FVector2D>();
-
-	Direction.X = value.X;
-	Direction.Y = value.Y;
-
-	Moving();
-}
-
-void ATPSPlayer::Moving()
-{
-	FRotator Temp1 = GetControlRotation();
-	FTransform Temp2 = FTransform(GetControlRotation());
-	FVector Temp3 = FTransform(GetControlRotation()).TransformVector(Direction);
 
 
-	Direction = FTransform(GetControlRotation()).TransformVector(Direction);
-	AddMovementInput(Direction);
-	Direction = FVector::ZeroVector;
-}
 
-void ATPSPlayer::InputJump(const FInputActionValue& inputValue)
-{
-	Jump();
-}
 
-void ATPSPlayer::CheckCameraVisible()
-{
-	FVector DistVec = FollowCamera->GetComponentLocation() - GetActorLocation();
-	float Distance = DistVec.Size();
-	if (Distance < CameraMinDistance)
-	{
-		GetMesh()->SetVisibility(false);
-	}
-	else
-	{
-		GetMesh()->SetVisibility(true);
-	}
-}
+
+
 
 
 

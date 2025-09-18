@@ -39,6 +39,10 @@ AEnemy::AEnemy()
 	{
 		FsmComp = CreateDefaultSubobject<UEnemyFSM>(TEXT("FSM"));
 	}
+
+	{
+		AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+	}
 }
 
 // Called when the game starts or when spawned

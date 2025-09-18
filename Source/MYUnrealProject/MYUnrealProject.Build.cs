@@ -10,7 +10,7 @@ public class MYUnrealProject : ModuleRules
 
 		PublicIncludePaths.AddRange(new string[] { "MYUnrealProject" });
 		PublicIncludePaths.AddRange(new string[] { });
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "Niagara" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "Niagara", "NavigationSystem", "AIModule" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

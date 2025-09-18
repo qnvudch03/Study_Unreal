@@ -55,7 +55,7 @@ public:
 	float AttackTimer = 0.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "FSM|AttackRange")
-	float AttackRange = 150.0f;
+	float AttackRange = 250.0f;
 
 
 public:
@@ -82,5 +82,11 @@ public:
 	bool bIsAlive = true;
 
 	void OnDie();
+
+	UPROPERTY()
+	class AAIController* Ai;
+
+	FVector RandomPos;
+	bool GetRandomPositionInNavMesh(FVector centerLocation, float radius, FVector& dest);
 		
 };

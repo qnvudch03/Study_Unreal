@@ -48,8 +48,8 @@ public:
 
 	void InputRun();
 
-private:
-	UPROPERTY(VisibleAnywhere, Category = "MY|Camera")
+public:
+	UPROPERTY(VisibleAnywhere,Category = "MY|Camera")
 	class USpringArmComponent* SpringArmComp = nullptr;
 
 	UPROPERTY(VisibleAnywhere, Category = "MY|Camera")
@@ -58,39 +58,15 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
 	class UInputMappingContext* InputMapping = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
-	class UInputAction* ActionLook = nullptr;
+	//Component
+	UPROPERTY(VisibleDefaultsOnly, Category = "MY|MoveComp")
+	class UPlayerMoveComp* MoveComp = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
-	class UInputAction* ActionJump = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
-	class UInputAction* ActionMove = nullptr;
-
-	//Gun
-	UPROPERTY(EditDefaultsOnly, Category = "MY|Gun")
-	class USkeletalMeshComponent* GunMeshComp;
-
-	UPROPERTY(EditDefaultsOnly, Category = "MY|Gun")
-	TSubclassOf<class ABullet> bulletFactory;
-
-	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
-	class UInputAction* ActionFire;
-
-	UPROPERTY(EditDefaultsOnly, Category = "MY|Gun")
-	class UStaticMeshComponent* SniperGunMeshComp;
-
-	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
-	class UInputAction* ActionSwitchWeapon;
-
-	void InputFire(const struct FInputActionValue& inputValue);
-	void InputSwitchWeapon(const struct FInputActionValue& inputValue);
+	UPROPERTY(VisibleDefaultsOnly, Category = "MY|WeaponComp")
+	class UWeaponComponent* WeaponComp = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = "MY|Gun")
 	TSubclassOf<class UUserWidget> SniperUIFactory;
-
-	UPROPERTY()
-	class UUserWidget* SniperModeUI = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = "MY|Gun")
 	TSubclassOf<class UUserWidget> HandGunUIFactory;
@@ -98,29 +74,15 @@ private:
 	UPROPERTY()
 	class UUserWidget* HandGUnModeUI = nullptr;
 
-	bool bIsSniperMode = false;
+	UPROPERTY()
+	class UUserWidget* SniperModeUI = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = "MY|GunFire")
-	class UNiagaraSystem* BulleftEffectFactory;
+	UPROPERTY(EditDefaultsOnly, Category = "MY|Gun")
+	class USkeletalMeshComponent* GunMeshComp;
 
-	///
+	UPROPERTY(EditDefaultsOnly, Category = "MY|Gun")
+	class UStaticMeshComponent* SniperGunMeshComp;
 
-	void Look(const struct FInputActionValue& inputValue);
-
-	FVector Direction;
-	//float MovingSpeed = 100;
-	void Move(const struct FInputActionValue& inputValue);
-	void Moving();
-
-	void InputJump(const struct FInputActionValue& inputValue);
-
-	UPROPERTY(EditDefaultsOnly, Category = "MY|CameraShake")
-	TSubclassOf<UCameraShakeBase> CameraShake;
-
-	UPROPERTY(EditDefaultsOnly, Category = "MY|GunSound")
-	class USoundWave* BuletSound;
-
-	float CameraMinDistance = 35;
-	void CheckCameraVisible();
+	
 
 };
