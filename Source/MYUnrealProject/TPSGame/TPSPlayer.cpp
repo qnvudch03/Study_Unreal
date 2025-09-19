@@ -87,6 +87,11 @@ ATPSPlayer::ATPSPlayer()
 		WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComp"));
 	}
 
+	//InitHealth
+	{
+		hp = MaxHP;
+	}
+
 	JumpMaxCount = 2;
 
 }
@@ -110,15 +115,21 @@ void ATPSPlayer::BeginPlay()
 		}
 	}
 
-	SniperModeUI = CreateWidget(GetWorld(), SniperUIFactory);
+	/*SniperModeUI = CreateWidget(GetWorld(), SniperUIFactory);
 	SniperModeUI->AddToViewport(0);
-	SniperModeUI->SetVisibility(ESlateVisibility::Collapsed);
+	SniperModeUI->SetVisibility(ESlateVisibility::Collapsed);*/
 
 	HandGUnModeUI = CreateWidget(GetWorld(), HandGunUIFactory);
 	HandGUnModeUI->AddToViewport(0);
 	HandGUnModeUI->SetVisibility(ESlateVisibility::Visible);
 
+	InGmaeUI = CreateWidget(GetWorld(), InGameUIFactory);
+	InGmaeUI->AddToViewport(0);
+	InGmaeUI->SetVisibility(ESlateVisibility::Visible);
 
+	GameOverUI = CreateWidget(GetWorld(), GameOverUIFactor);
+	GameOverUI->AddToViewport(0);
+	GameOverUI->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 // Called every frame
@@ -154,28 +165,30 @@ void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 void ATPSPlayer::ShowSniperModeUI()
 {
-	if (SniperModeUI == nullptr)
+	/*if (SniperModeUI == nullptr)
 	{
 		return;
 	}
 
 	SniperModeUI->SetVisibility(ESlateVisibility::Visible);
-	HandGUnModeUI->SetVisibility(ESlateVisibility::Collapsed);
+	HandGUnModeUI->SetVisibility(ESlateVisibility::Collapsed);*/
 
 	FollowCamera->SetFieldOfView(30);
+	SwitchWeapon(true);
 }
 
 void ATPSPlayer::HideSniperModeUI()
 {
-	if (SniperModeUI == nullptr)
+	/*if (SniperModeUI == nullptr)
 	{
 		return;
 	}
 
 	SniperModeUI->SetVisibility(ESlateVisibility::Collapsed);
-	HandGUnModeUI->SetVisibility(ESlateVisibility::Visible);
+	HandGUnModeUI->SetVisibility(ESlateVisibility::Visible);*/
 
 	FollowCamera->SetFieldOfView(90);
+	SwitchWeapon(false);
 }
 
 void ATPSPlayer::InputRun()
@@ -191,6 +204,22 @@ void ATPSPlayer::InputRun()
 	{
 		movement->MaxWalkSpeed = runSpeed;
 	}
+}
+
+void ATPSPlayer::OnPlayerHitted()
+{
+	UE_LOG(LogTemp, Log, TEXT("Player Hitted!"));
+
+	hp--;
+
+	if (hp <= 0)
+	{
+		OnGameOver();
+		GameOverUI->SetVisibility(ESlateVisibility::Visible);
+		UE_LOG(LogTemp, Log, TEXT("Player Die"));
+	}
+
+	UpdateHealthState();
 }
 
 

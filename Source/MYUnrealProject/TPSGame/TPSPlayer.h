@@ -22,7 +22,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
@@ -52,7 +52,7 @@ public:
 public:
 	FSetUpComponentController SetCompControllDelegate;
 
-	UPROPERTY(VisibleAnywhere,Category = "MY|Camera")
+	UPROPERTY(VisibleAnywhere, Category = "MY|Camera")
 	class USpringArmComponent* SpringArmComp = nullptr;
 
 	UPROPERTY(VisibleAnywhere, Category = "MY|Camera")
@@ -74,11 +74,23 @@ public:
 	UPROPERTY(EditAnywhere, Category = "MY|Gun")
 	TSubclassOf<class UUserWidget> HandGunUIFactory;
 
+	UPROPERTY(EditAnywhere, Category = "MY|InGame")
+	TSubclassOf<class UUserWidget> InGameUIFactory;
+
+	UPROPERTY(EditAnywhere, Category = "MY|GameOver")
+	TSubclassOf<class UUserWidget> GameOverUIFactor;
+
 	UPROPERTY()
 	class UUserWidget* HandGUnModeUI = nullptr;
 
 	UPROPERTY()
 	class UUserWidget* SniperModeUI = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|ImGameUI")
+	class UUserWidget* InGmaeUI = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|GameOver")
+	class UUserWidget* GameOverUI = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "MY|Gun")
 	class USkeletalMeshComponent* GunMeshComp;
@@ -86,6 +98,23 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "MY|Gun")
 	class UStaticMeshComponent* SniperGunMeshComp;
 
-	
+	UFUNCTION(BlueprintImplementableEvent, Category = "MY|WeaponChagne")
+	void SwitchWeapon(bool bIsSniperMode);
+
+	//Health
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|MaxHP")
+	float MaxHP = 10;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|HP")
+	float hp = 0;
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "MY|UpdateHealth")
+	void UpdateHealthState();
+
+	UFUNCTION(BlueprintCallable)
+	void OnPlayerHitted();
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "MY|GameOver")
+	void OnGameOver();
 
 };
