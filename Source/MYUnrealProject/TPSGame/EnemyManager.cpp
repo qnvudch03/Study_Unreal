@@ -21,7 +21,10 @@ void AEnemyManager::CreateEnemy()
 	GetWorld()->SpawnActor<AEnemy>(Enemy, SpawnPoses[randomSpawnIndex]->GetTransform());
 
 	float randomSpawnTime = FMath::RandRange(SpawnMinTime, SpawnMaxTime);
+
+
 	GetWorld()->GetTimerManager().SetTimer(spawnTimerHandle, this, &AEnemyManager::CreateEnemy, randomSpawnTime);
+	//GetWorld()->GetTimerManager().SetTimer(spawnTimerHandle, FTimerDelegate::CreateLambda([this]() {}), 2, false);
 
 }
 

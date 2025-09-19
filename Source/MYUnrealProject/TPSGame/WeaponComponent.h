@@ -39,7 +39,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
 	class UInputAction* ActionSwitchWeapon;*/
 
-	UPROPERTY(VisibleAnywhere, Category = "MY|FollowCamera")
+	UPROPERTY(EditAnywhere, Category = "MY|FollowCamera")
 	class UCameraComponent* FollowCamera = nullptr;
 
 	void InputFire(const struct FInputActionValue& inputValue);
@@ -47,23 +47,23 @@ public:
 
 	bool bIsSniperMode = false;
 
-	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
+	UPROPERTY(EditAnywhere, Category = "MY|Input")
 	class UInputAction* ActionFire;
 
-	UPROPERTY(EditDefaultsOnly, Category = "MY|Input")
+	UPROPERTY(EditAnywhere, Category = "MY|Input")
 	class UInputAction* ActionSwitchWeapon;
 
 
-	UPROPERTY(EditDefaultsOnly, Category = "MY|CameraShake")
+	UPROPERTY(EditAnywhere, Category = "MY|CameraShake")
 	TSubclassOf<UCameraShakeBase> CameraShake;
 
-	UPROPERTY(EditDefaultsOnly, Category = "MY|GunSound")
+	UPROPERTY(EditAnywhere, Category = "MY|GunSound")
 	class USoundWave* BuletSound;
 
-	UPROPERTY(EditDefaultsOnly, Category = "MY|GunFire")
+	UPROPERTY(EditAnywhere, Category = "MY|GunFire")
 	class UNiagaraSystem* BulleftEffectFactory;
 
-	UPROPERTY(EditDefaultsOnly, Category = "MY|Gun")
+	UPROPERTY(EditAnywhere, Category = "MY|Gun")
 	TSubclassOf<class ABullet> bulletFactory;
 
 	///

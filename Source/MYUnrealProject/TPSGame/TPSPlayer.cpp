@@ -135,8 +135,10 @@ void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 	UEnhancedInputComponent* pc = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
 
-	MoveComp->SetupInputBinding(pc);
-	WeaponComp->SetupInputBinding(pc);
+	/*MoveComp->SetupInputBinding(pc);
+	WeaponComp->SetupInputBinding(pc);*/
+
+	SetCompControllDelegate.Broadcast(pc);
 
 	if (pc)
 	{

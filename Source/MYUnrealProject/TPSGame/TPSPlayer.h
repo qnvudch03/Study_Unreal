@@ -7,6 +7,7 @@
 #include "../EnemyFSM.h"
 #include "TPSPlayer.generated.h"
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FSetUpComponentController, class UEnhancedInputComponent*)
 
 UCLASS()
 class MYUNREALPROJECT_API ATPSPlayer : public ACharacter
@@ -49,6 +50,8 @@ public:
 	void InputRun();
 
 public:
+	FSetUpComponentController SetCompControllDelegate;
+
 	UPROPERTY(VisibleAnywhere,Category = "MY|Camera")
 	class USpringArmComponent* SpringArmComp = nullptr;
 

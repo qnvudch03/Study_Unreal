@@ -28,6 +28,8 @@ public:
 
 	virtual void SetupInputBinding(class UEnhancedInputComponent* playerInput){}
 
+	virtual void InitializeComponent() override;
+
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "MY|Player")
 	ATPSPlayer* Me;
