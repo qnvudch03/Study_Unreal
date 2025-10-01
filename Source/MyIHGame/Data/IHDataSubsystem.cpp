@@ -14,3 +14,13 @@ UIHDataSubsystem::UIHDataSubsystem()
 		InputDataAsset = TempInputData.Object;
 	}
 }
+
+bool UIHDataSubsystem::ShouldCreateSubsystem(UObject* Outer) const
+{
+	if (GetClass()->IsInBlueprint() && Super::ShouldCreateSubsystem(Outer))
+	{
+		return true;
+	}
+
+	return false;
+}

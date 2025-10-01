@@ -9,6 +9,7 @@
 #include "Data/IHDataSubsystem.h"
 #include "Data/IHInputDataAsset.h"
 #include "IHGameplayTags.h"
+#include "../CharacterStat/CharacterStat.h"
 
 UIHPlayerMoveComponent::UIHPlayerMoveComponent()
 {
@@ -21,7 +22,7 @@ void UIHPlayerMoveComponent::BeginPlay()
 	Super::BeginPlay();
 
 	// 초기 속도를 걷기로 설정
-	CharacterMoveComp->MaxWalkSpeed = WalkSpeed;
+	CharacterMoveComp->MaxWalkSpeed = 200.0f;
 }
 
 void UIHPlayerMoveComponent::SetupInputBinding(UEnhancedInputComponent* PlayerInput)
@@ -40,8 +41,11 @@ void UIHPlayerMoveComponent::SetupInputBinding(UEnhancedInputComponent* PlayerIn
 	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Move), ETriggerEvent::Triggered, this, &UIHPlayerMoveComponent::Move);
 
 
-	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Run), ETriggerEvent::Started, this, &UIHPlayerMoveComponent::InputRun);
-	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Run), ETriggerEvent::Completed, this, &UIHPlayerMoveComponent::InputRun);
+	/*PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Run), ETriggerEvent::Started, this, &UIHPlayerMoveComponent::InputRun);
+	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Run), ETriggerEvent::Completed, this, &UIHPlayerMoveComponent::InputRun);*/
+
+	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Run), ETriggerEvent::Started, this, &UIHPlayerMoveComponent::SprintStart);
+	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Run), ETriggerEvent::Completed, this, &UIHPlayerMoveComponent::SprintEnd);
 
 	// 점프 입력 이벤트 처리 함수 바인딩
 	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Jump), ETriggerEvent::Started, this, &UIHPlayerMoveComponent::InputJump);
@@ -88,21 +92,48 @@ void UIHPlayerMoveComponent::InputJump(const FInputActionValue& InputValue)
 
 void UIHPlayerMoveComponent::InputRun(const FInputActionValue& InputValue)
 {
+	//UCharacterMovementComponent* Movement = OwnerCharacter->GetCharacterMovement();
+	//// 현재 달리기 모드라면
+	//if (Movement->MaxWalkSpeed > WalkSpeed)
+	//{
+	//	// 걷기 속도로 전환
+	//	Movement->MaxWalkSpeed = WalkSpeed;
+	//	bIsRun = false;
+	//}
+	//else
+	//{
+	//	Movement->MaxWalkSpeed = RunSpeed;
+	//	bIsRun = true;
+	//}
+
 	UCharacterMovementComponent* Movement = OwnerCharacter->GetCharacterMovement();
 	// 현재 달리기 모드라면
-	if (Movement->MaxWalkSpeed > WalkSpeed)
+	if (Movement->MaxWalkSpeed > OwnerCharacter->GetCharacterStat()->WalkSpeed)
 	{
+		
 		// 걷기 속도로 전환
-		Movement->MaxWalkSpeed = WalkSpeed;
+		Movement->MaxWalkSpeed = OwnerCharacter->GetCharacterStat()->WalkSpeed;
 		bIsRun = false;
 	}
 	else
 	{
-		Movement->MaxWalkSpeed = RunSpeed;
+		Movement->MaxWalkSpeed = OwnerCharacter->GetCharacterStat()->SprintSpeed;
 		bIsRun = true;
 	}
 }
 
 void UIHPlayerMoveComponent::InputInteract(const FInputActionValue& InputValue)
 {
+}
+
+void UIHPlayerMoveComponent::SprintStart(const FInputActionValue& InputValue)
+{
+	UCharacterMovementComponent* Movement = OwnerCharacter->GetCharacterMovement();
+	Movement->MaxWalkSpeed = OwnerCharacter->GetCharacterStat()->SprintSpeed;
+}
+
+void UIHPlayerMoveComponent::SprintEnd(const FInputActionValue& InputValue)
+{
+	UCharacterMovementComponent* Movement = OwnerCharacter->GetCharacterMovement();
+	Movement->MaxWalkSpeed = OwnerCharacter->GetCharacterStat()->WalkSpeed;
 }

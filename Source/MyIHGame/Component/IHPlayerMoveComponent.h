@@ -6,6 +6,8 @@
 #include "Component/IHPlayerBaseComponent.h"
 #include "IHPlayerMoveComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSpeedChange, float, NewSpeed);
+
 /**
  * 
  */
@@ -21,13 +23,6 @@ public:
 
 public:
 
-	// 이동 속도
-	UPROPERTY(EditAnywhere, Category = "IHGame|Value")
-	float WalkSpeed = 200;
-	// 달리기 속도
-	UPROPERTY(EditAnywhere, Category = "IHGame|Value")
-	float RunSpeed = 600;
-
 	// 달리기중인지
 	bool bIsRun = false;
 
@@ -40,4 +35,7 @@ public:
 	// 달리기
 	void InputRun(const struct FInputActionValue& InputValue);
 	void InputInteract(const struct FInputActionValue& InputValue);
+
+	void SprintStart(const struct FInputActionValue& InputValue);
+	void SprintEnd(const struct FInputActionValue& InputValue);
 };

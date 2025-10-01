@@ -32,7 +32,7 @@ public:
 	UFUNCTION()
 	void OnPickupBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* Other, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "MY|Pickup")
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void Pickup(class AIHPlayer* OwningCharacter);
 
 	virtual void Pickup_Implementation(class AIHPlayer* OwningCharacter);

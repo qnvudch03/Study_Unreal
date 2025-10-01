@@ -2,4 +2,45 @@
 
 
 #include "Player/TPS_PlayerState.h"
+#include "../CharacterStat/CharacterStat.h"
+#include "../Character/IHPlayer.h"
+#include <Net/UnrealNetwork.h>
 
+void ATPS_PlayerState::AddXp(int32 value)
+{
+	Xp += value;
+	OnXpChanged.Broadcast(Xp);
+
+	GEngine->AddOnScreenDebugMessage(0, 5.0f, FColor::Yellow, FString::Printf(TEXT("Totla Xp : %d"), Xp));
+	
+	if (const auto Character = Cast<AIHPlayer>(GetPawn()))
+	{
+		if (Character->GetCharacterStat()->NextLevelXp > Xp)
+		{
+			Lv++;
+			Character->UpdateCharacterStat(Lv);
+			OnLvChagned.Broadcast(Lv);
+
+			GEngine->AddOnScreenDebugMessage(0, 5.0f, FColor::Red, FString::Printf(TEXT("Level UP!")));
+		}
+	}
+}
+
+void ATPS_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	//DOREPLIFETIME(ATPS_PlayerState, Xp);
+	DOREPLIFETIME_CONDITION(ATPS_PlayerState, Xp, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ATPS_PlayerState, Lv, COND_OwnerOnly);
+}
+
+void ATPS_PlayerState::OnRep_Xp()
+{
+	OnXpChanged.Broadcast(Xp);
+}
+
+void ATPS_PlayerState::OnRep_Lv()
+{
+	OnLvChagned.Broadcast(Lv);
+}

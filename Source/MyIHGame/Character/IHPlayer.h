@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "../CharacterStat/CharacterStat.h"
 #include "IHPlayer.generated.h"
+
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FInputBindingDelegate, class UEnhancedInputComponent*);
 
@@ -41,6 +43,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FString GetRemoteRoleString();
 
+	void UpdateCharacterStat(int32 CharacterLevel);
+
+	FORCEINLINE FCharacterStat* GetCharacterStat() const { return CharacterStat; }
+
 public:
 	UPROPERTY(VisibleAnywhere, Category = "IHGame|Camera")
 	class USpringArmComponent* SpringArmComp;
@@ -73,4 +79,11 @@ public:
 	// 총 바꿀 때 호출되는 이벤트 함수
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = Health)
 	void OnUsingGrenade(bool isGrenade);
+
+private:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|Character Data", meta = (AllowPrivateAccess = "true"))
+	class UDataTable* CharacterDataTable;
+
+	//struct FCharacterStat* CharacterStat;
+	FCharacterStat* CharacterStat;
 };

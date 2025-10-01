@@ -12,5 +12,6 @@ namespace IHGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Action_Run);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Action_Jump);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Action_Fire);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Action_Interact);
 };
 

@@ -20,6 +20,7 @@
 #include "Util/MyIHGame.h"
 #include "Data/IHDataSubsystem.h"
 #include "Data/IHInputDataAsset.h"
+//#include "../CharacterStat/CharacterStat.h"
 
 
 // Sets default values
@@ -98,6 +99,8 @@ void AIHPlayer::BeginPlay()
 	}
 
 	Hp = InitialHp;
+
+	UpdateCharacterStat(1);
 }
 
 // Called every frame
@@ -153,6 +156,31 @@ FString AIHPlayer::GetRemoteRoleString()
 		return FString(TEXT("Remote : SimulatedProxy"));
 	}
 	return FString();
+}
+
+void AIHPlayer::UpdateCharacterStat(int32 CharacterLevel)
+{
+	if (CharacterDataTable)
+	{
+		TArray< FCharacterStat*> CharacterStatRows;
+		//CharacterDataTable->GetAllRows<FCharacterStat>(TEXT("Character"), CharacterStatRows);
+
+		UGameInstance* GameInstance = GetWorld()->GetGameInstance();
+		UIHDataSubsystem* DataSubsystem = GameInstance->GetSubsystem<UIHDataSubsystem>();
+		if (DataSubsystem == nullptr)
+			return;
+
+		DataSubsystem->CharacterDataTable->GetAllRows<FCharacterStat>(TEXT("Character"), CharacterStatRows);
+
+
+		if (CharacterStatRows.Num() > 0)
+		{
+			const auto NewCharacterLevel = FMath::Clamp(CharacterLevel, 1, CharacterStatRows.Num());
+			CharacterStat = CharacterStatRows[NewCharacterLevel - 1];
+
+			GetCharacterMovement()->MaxWalkSpeed = GetCharacterStat()->WalkSpeed;
+		}
+	}
 }
 
 void AIHPlayer::OnHitEvent()
