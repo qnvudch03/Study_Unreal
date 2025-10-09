@@ -6,6 +6,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Component/IHPlayerFireComponent.h"
 #include "Weapon/IHWeapon.h"
+#include "Util/MyIHGame.h"
 
 void UIHPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
@@ -15,11 +16,26 @@ void UIHPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	AIHPlayer* Player = Cast<AIHPlayer>(OwnerPawn);
 	if (Player)
 	{
+
 		Velocity = Player->GetVelocity();
 		FVector ForwardVector = Player->GetActorForwardVector();
-		
+
 		// Velocity 자체의 스피드
 		Speed = Velocity.Length();
+
+		//Speed = Player->GetCharacterMovement()->MaxWalkSpeed;
+
+		if (Player->HasAuthority() && Player->GetRemoteRole() == ENetRole::ROLE_AutonomousProxy)
+		{
+			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Authority Speed : %f"), Speed));
+			PRINT_LOG(TEXT("Authority Speed : %f"),Speed);
+		}
+
+		else if (!Player->HasAuthority() && Player->GetLocalRole() == ENetRole::ROLE_AutonomousProxy)
+		{
+			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Client Speed : %f"), Speed));
+			PRINT_LOG(TEXT("Client Speed : %f"), Speed);
+		}
 
 		// 가고자 하는 방향 Velocity는 월드 기준.
 		// 월드 기준이 아니라, 플레이어 로컬공간의 회전값을 얻기위해 역행렬을 곱해준다.
@@ -51,7 +67,7 @@ void UIHPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 				FRotator::ZeroRotator,
 				Position,
 				Rotator);
-			
+
 			// hand_r 공간으로 변환된 로테이션
 			LeftHandTransfrom.SetLocation(Position);
 			LeftHandTransfrom.SetRotation(FQuat(Rotator));

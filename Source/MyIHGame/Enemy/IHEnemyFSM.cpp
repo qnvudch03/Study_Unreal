@@ -27,7 +27,6 @@ UIHEnemyFSM::UIHEnemyFSM()
 void UIHEnemyFSM::BeginPlay()
 {
 	Super::BeginPlay();
-
 	// ...
 	// 월드에서 ATPSPlayer 타깃 찾아오기
 	AActor* Actor = UGameplayStatics::GetActorOfClass(GetWorld(), AIHPlayer::StaticClass());	
@@ -41,8 +40,12 @@ void UIHEnemyFSM::BeginPlay()
 	OwnerCharacter = Cast<AIHEnemy>(GetOwner());
 	AnimInst = Cast<UIHEnemyAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance());
 
-	// AAIController 할당하기
-	AI = Cast<AAIController>(OwnerCharacter->GetController());
+	if (OwnerCharacter)
+	{
+		// AAIController 할당하기
+		AI = Cast<AAIController>(OwnerCharacter->GetController());
+	}
+	
 }
 
 
@@ -105,6 +108,9 @@ void UIHEnemyFSM::MoveState()
 	FAIMoveRequest Req;
 	Req.SetAcceptanceRadius(3);
 	Req.SetGoalLocation(Destination);
+
+	if (AI == nullptr)
+		return;
 	
 	AI->BuildPathfindingQuery(Req, Query);
 	
@@ -248,7 +254,13 @@ void UIHEnemyFSM::OnDamageProcess()
 // 랜덤 위치 가져오기
 bool UIHEnemyFSM::GetRandomPositionInNavMesh(FVector CenterLocation, float Radius, FVector& Dest)
 {
+	if (OwnerCharacter->GetLocalRole() != ENetRole::ROLE_Authority)
+		return false;
+
 	auto NS = UNavigationSystemV1::GetNavigationSystem(GetWorld());
+
+	if (NS == nullptr)
+		return false;
 
 	FNavLocation Loc;
 	bool Result = NS->GetRandomReachablePointInRadius(CenterLocation, Radius, Loc);

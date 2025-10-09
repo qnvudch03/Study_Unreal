@@ -20,7 +20,9 @@
 #include "Util/MyIHGame.h"
 #include "Data/IHDataSubsystem.h"
 #include "Data/IHInputDataAsset.h"
-//#include "../CharacterStat/CharacterStat.h"
+#include "../Interface/TPS_Interactable.h"
+#include "../Test/IHColorBox.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 
 // Sets default values
@@ -68,6 +70,24 @@ AIHPlayer::AIHPlayer()
 	FireComp = CreateDefaultSubobject<UIHPlayerFireComponent>(TEXT("FireComp"));
 }
 
+void AIHPlayer::Interact_Server_Implementation()
+{
+	if (InteractableActor)
+	{
+		ITPS_Interactable::Execute_Interact(InteractableActor, this);
+	}
+
+	else if (MoveComp->CurrentHoldColorBox)
+	{
+		MoveComp->Multicast_PickDropColorBox(MoveComp->CurrentHoldColorBox, nullptr);
+	}
+}
+
+void AIHPlayer::GetColorBox(AIHColorBox* PickedBox)
+{
+
+}
+
 // Called when the game starts or when spawned
 void AIHPlayer::BeginPlay()
 {
@@ -103,10 +123,89 @@ void AIHPlayer::BeginPlay()
 	UpdateCharacterStat(1);
 }
 
+void AIHPlayer::SprintStart_Server_Implementation()
+{
+	if (GetCharacterStat())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = GetCharacterStat()->SprintSpeed;
+	}
+
+	SprintStart_Multicast(GetCharacterStat()->SprintSpeed);
+}
+
+void AIHPlayer::SprintEnd_Server_Implementation()
+{
+	if (GetCharacterStat())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = GetCharacterStat()->WalkSpeed;
+	}
+
+	SprintEnd_Multicast(GetCharacterStat()->WalkSpeed);
+}
+
+void AIHPlayer::SprintStart_Multicast_Implementation(float NewSpeed)
+{
+	if (GetCharacterStat())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
+	}
+}
+
+void AIHPlayer::SprintEnd_Multicast_Implementation(float NewSpeed)
+{
+	if (GetCharacterStat())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
+	}
+}
+
 // Called every frame
 void AIHPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (GetLocalRole() != ENetRole::ROLE_Authority)
+		return;
+
+	FHitResult HitResult;
+	FCollisionQueryParams QueryParams;
+	QueryParams.bTraceComplex = true;
+	QueryParams.AddIgnoredActor(this);
+
+	TArray<AActor*> IgnoreList;
+	IgnoreList.Add(this);
+
+	if (MoveComp->CurrentHoldColorBox)
+	{
+		IgnoreList.Add(MoveComp->CurrentHoldColorBox);
+	}
+
+	float SphereRadius = 50.0f;
+	FVector StartLocation = GetActorLocation() + GetActorForwardVector() * 150.0f;
+	FVector EndLocation = StartLocation + GetActorForwardVector() * 500.0f;
+
+	auto IsHit = UKismetSystemLibrary::SphereTraceSingle(
+		GetWorld(), 
+		StartLocation, 
+		EndLocation, 
+		SphereRadius, 
+		UEngineTypes::ConvertToTraceType(ECC_WorldStatic), 
+		false, IgnoreList,
+		EDrawDebugTrace::ForOneFrame, 
+		HitResult, true
+	);
+
+
+	if (IsHit && HitResult.GetActor()->GetClass()->ImplementsInterface(UTPS_Interactable::StaticClass()))
+	{
+		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, SphereRadius, 12, FColor::Magenta, false, 1.0f);
+		InteractableActor = HitResult.GetActor();
+	}
+
+	else
+	{
+		InteractableActor = nullptr;
+	}
 }
 
 // Called to bind functionality to input
@@ -176,9 +275,14 @@ void AIHPlayer::UpdateCharacterStat(int32 CharacterLevel)
 		if (CharacterStatRows.Num() > 0)
 		{
 			const auto NewCharacterLevel = FMath::Clamp(CharacterLevel, 1, CharacterStatRows.Num());
+
 			CharacterStat = CharacterStatRows[NewCharacterLevel - 1];
 
-			GetCharacterMovement()->MaxWalkSpeed = GetCharacterStat()->WalkSpeed;
+			bool isRunning = (CharacterStat->WalkSpeed < GetCharacterMovement()->MaxWalkSpeed);
+
+			isRunning ? (GetCharacterMovement()->MaxWalkSpeed = GetCharacterStat()->SprintSpeed) :
+						(GetCharacterMovement()->MaxWalkSpeed = GetCharacterStat()->WalkSpeed);
+
 		}
 	}
 }
@@ -199,4 +303,3 @@ void AIHPlayer::OnGameOver_Implementation()
 	// 게임 오버 시 일시 정지
 	UGameplayStatics::SetGamePaused(GetWorld(), true);
 }
-

@@ -107,7 +107,7 @@ void UIHPlayerFireComponent::UpdateAimOffset(float DeltaTime)
 		// 일시적으로 카메라=캐릭터의 회전 싱크를 끊는다.
 		OwnerCharacter->bUseControllerRotationYaw = false;
 
-		PRINT_LOG(TEXT("AO_StartYaw : %f, AO_Yaw : %f"), AimOffset_StartYaw, AimOffset_Yaw);
+		//PRINT_LOG(TEXT("AO_StartYaw : %f, AO_Yaw : %f"), AimOffset_StartYaw, AimOffset_Yaw);
 	}
 	// 이동중일떄는 카메라 적용
 	if (Speed > 0 || bIsInAir)
@@ -121,6 +121,16 @@ void UIHPlayerFireComponent::UpdateAimOffset(float DeltaTime)
 
 	// Pitch
 	AimOffset_Pitch = OwnerCharacter->GetBaseAimRotation().Pitch;
+
+	//네트워크 데이터 패킹 과정에서, 음수 각도가 360 - r 만큼으로 환전되어 전달됨
+	if (AimOffset_Pitch > 90.0f && OwnerCharacter->IsLocallyControlled() == false)
+	{
+		FVector2D InRange(270, 360);
+		FVector2D OutRange(-90, 0);
+
+		AimOffset_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AimOffset_Pitch);
+	}
+
 }
 
 void UIHPlayerFireComponent::InputFire(const FInputActionValue& InputValue)

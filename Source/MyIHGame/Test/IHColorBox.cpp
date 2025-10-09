@@ -5,6 +5,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Character/IHPlayer.h"
+#include "Component/IHPlayerMoveComponent.h"
 #include "Net/UnrealNetwork.h"	// 헤더를 인크루드해야 네트워크 사용가능
 
 // Sets default values
@@ -90,6 +91,14 @@ void AIHColorBox::OnBeginOverlapSetOwner(UPrimitiveComponent* OverlappedComponen
 	if (Player)	// 플레이어와 겹쳤다면
 	{
 		SetOwner(Player);
+	}
+}
+
+void AIHColorBox::Interact_Implementation(AIHPlayer* CharacterInstigator)
+{
+	if (HasAuthority())
+	{
+		CharacterInstigator->MoveComp->Multicast_PickDropColorBox(CharacterInstigator->MoveComp->CurrentHoldColorBox, this);
 	}
 }
 

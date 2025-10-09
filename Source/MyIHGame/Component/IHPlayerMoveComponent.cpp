@@ -9,6 +9,7 @@
 #include "Data/IHDataSubsystem.h"
 #include "Data/IHInputDataAsset.h"
 #include "IHGameplayTags.h"
+#include "../Test/IHColorBox.h"
 #include "../CharacterStat/CharacterStat.h"
 
 UIHPlayerMoveComponent::UIHPlayerMoveComponent()
@@ -49,6 +50,8 @@ void UIHPlayerMoveComponent::SetupInputBinding(UEnhancedInputComponent* PlayerIn
 
 	// 점프 입력 이벤트 처리 함수 바인딩
 	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Jump), ETriggerEvent::Started, this, &UIHPlayerMoveComponent::InputJump);
+
+	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Interact), ETriggerEvent::Triggered, this, &UIHPlayerMoveComponent::InputInteract);
 }
 
 void UIHPlayerMoveComponent::Look(const FInputActionValue& InputValue)
@@ -124,16 +127,40 @@ void UIHPlayerMoveComponent::InputRun(const FInputActionValue& InputValue)
 
 void UIHPlayerMoveComponent::InputInteract(const FInputActionValue& InputValue)
 {
+	OwnerCharacter->Interact_Server();
 }
 
 void UIHPlayerMoveComponent::SprintStart(const FInputActionValue& InputValue)
 {
-	UCharacterMovementComponent* Movement = OwnerCharacter->GetCharacterMovement();
-	Movement->MaxWalkSpeed = OwnerCharacter->GetCharacterStat()->SprintSpeed;
+	/*UCharacterMovementComponent* Movement = OwnerCharacter->GetCharacterMovement();
+	Movement->MaxWalkSpeed = OwnerCharacter->GetCharacterStat()->SprintSpeed;*/
+
+	OwnerCharacter->SprintStart_Server();
 }
 
 void UIHPlayerMoveComponent::SprintEnd(const FInputActionValue& InputValue)
 {
-	UCharacterMovementComponent* Movement = OwnerCharacter->GetCharacterMovement();
-	Movement->MaxWalkSpeed = OwnerCharacter->GetCharacterStat()->WalkSpeed;
+	/*UCharacterMovementComponent* Movement = OwnerCharacter->GetCharacterMovement();
+	Movement->MaxWalkSpeed = OwnerCharacter->GetCharacterStat()->WalkSpeed;*/
+
+	OwnerCharacter->SprintEnd_Server();
+}
+
+void UIHPlayerMoveComponent::Multicast_PickDropColorBox_Implementation(AIHColorBox* OldBox, AIHColorBox* NewBox)
+{
+	if (OldBox)
+	{
+		FVector OwnerLocation = OwnerCharacter->GetActorLocation();
+		FDetachmentTransformRules DetachRule(EDetachmentRule::KeepWorld, true);
+		OldBox->DetachFromActor(DetachRule);
+		OldBox->SetOwner(nullptr);
+	}
+
+	CurrentHoldColorBox = NewBox;
+
+	if (NewBox)
+	{
+		NewBox->SetOwner(OwnerCharacter);
+		NewBox->AttachToActor(OwnerCharacter, FAttachmentTransformRules::KeepWorldTransform);
+	}
 }

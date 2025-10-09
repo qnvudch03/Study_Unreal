@@ -23,9 +23,42 @@ public:
 	// 입력 바인딩 델리게이트
 	FInputBindingDelegate OnInputBindingDelegate;
 
+	UFUNCTION(Server, Reliable)
+	void SprintStart_Server();
+
+	virtual void SprintStart_Server_Implementation();
+
+	UFUNCTION(Server, Reliable)
+	void SprintEnd_Server();
+
+	virtual void SprintEnd_Server_Implementation();
+
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SprintStart_Multicast(float NewSpeed);
+
+	virtual void SprintStart_Multicast_Implementation(float NewSpeed);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SprintEnd_Multicast(float NewSpeed);
+
+	virtual void SprintEnd_Multicast_Implementation(float NewSpeed);
+
+
+	UFUNCTION(Server, Reliable)
+	void Interact_Server();
+
+	virtual void Interact_Server_Implementation();
+
+	void GetColorBox(class AIHColorBox* PickedBox);
+
+
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
 
 public:	
 	// Called every frame
@@ -86,4 +119,7 @@ private:
 
 	//struct FCharacterStat* CharacterStat;
 	FCharacterStat* CharacterStat;
+
+	UPROPERTY()
+	AActor* InteractableActor;
 };

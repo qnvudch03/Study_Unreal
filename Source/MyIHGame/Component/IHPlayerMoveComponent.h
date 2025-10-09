@@ -38,4 +38,15 @@ public:
 
 	void SprintStart(const struct FInputActionValue& InputValue);
 	void SprintEnd(const struct FInputActionValue& InputValue);
+
+	UPROPERTY()
+	AActor* InteractableActor;
+
+	UPROPERTY()
+	class AIHColorBox* CurrentHoldColorBox;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PickDropColorBox(class AIHColorBox* OldBox, class AIHColorBox* NewBox);
+
+	virtual void Multicast_PickDropColorBox_Implementation(class AIHColorBox* OldBox, class AIHColorBox* NewBox);
 };
