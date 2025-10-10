@@ -23,6 +23,7 @@
 #include "../Interface/TPS_Interactable.h"
 #include "../Test/IHColorBox.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include <Components/PawnNoiseEmitterComponent.h>
 
 
 // Sets default values
@@ -68,6 +69,9 @@ AIHPlayer::AIHPlayer()
 
 	MoveComp = CreateDefaultSubobject<UIHPlayerMoveComponent>(TEXT("MoveComp"));
 	FireComp = CreateDefaultSubobject<UIHPlayerFireComponent>(TEXT("FireComp"));
+
+	NoiseEmitter = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("NoiseEmitter"));
+	NoiseEmitter->NoiseLifetime = 0.01f;
 }
 
 void AIHPlayer::Interact_Server_Implementation()
@@ -205,6 +209,16 @@ void AIHPlayer::Tick(float DeltaTime)
 	else
 	{
 		InteractableActor = nullptr;
+	}
+
+	if (GetCharacterMovement()->MaxWalkSpeed == GetCharacterStat()->SprintSpeed)
+	{
+		auto Noise = 1.0f;
+		if (GetCharacterStat() && GetCharacterStat()->StealthMultiplier)
+		{
+			Noise = Noise / GetCharacterStat()->StealthMultiplier;
+		}
+		NoiseEmitter->MakeNoise(this, Noise, GetActorLocation());
 	}
 }
 

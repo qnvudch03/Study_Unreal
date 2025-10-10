@@ -11,6 +11,8 @@
 #include <Perception/PawnSensingComponent.h>
 #include <Blueprint/AIBlueprintHelperLibrary.h>
 #include <Components/SphereComponent.h>
+#include "../Game/TPS_GameMode.h"
+#include "../Item/TPS_BasePickup.h"
 
 // Sets default values
 ATPS_Minion::ATPS_Minion()
@@ -55,6 +57,12 @@ ATPS_Minion::ATPS_Minion()
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.0f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.0f;
 
+	static ConstructorHelpers::FClassFinder<ATPS_BasePickup> SpawnedPickupAsset(TEXT("/Game/Blueprints/Item/BP_GoldCoin"));
+	if (SpawnedPickupAsset.Class)
+	{
+		SpawnedPickup = SpawnedPickupAsset.Class;
+	}
+
 }
 
 // Called when the game starts or when spawned
@@ -91,6 +99,12 @@ void ATPS_Minion::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 }
 
+void ATPS_Minion::OnHearNoise(APawn* PawnInstigator, const FVector& Location, float Volume)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Noise Detected!"));
+	GoToLocation(Location);
+}
+
 void ATPS_Minion::SetNextPosition()
 {
 	if (GetLocalRole() != ENetRole::ROLE_Authority)
@@ -111,10 +125,21 @@ void ATPS_Minion::Chase(APawn* Player)
 	if (GetLocalRole() != ENetRole::ROLE_Authority)
 		return;
 
+	if (const auto GameMode = Cast<ATPS_GameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		GameMode->AlertMinions(this, Player->GetActorLocation(), AlertRadius);
+	}
+
 	GetCharacterMovement()->MaxWalkSpeed = ChaseSpeed;
 	UAIBlueprintHelperLibrary::SimpleMoveToActor(GetController(), Player);
 
 	DrawDebugSphere(GetWorld(), Player->GetActorLocation(), 25.0f, 12, FColor::Red, true, 10.0f, 0, 2.0f);
+}
+
+void ATPS_Minion::GoToLocation(const FVector& Location)
+{
+	PatrolLocation = Location;
+	UAIBlueprintHelperLibrary::SimpleMoveToLocation(GetController(), PatrolLocation);
 }
 
 void ATPS_Minion::PostInitializeComponents()
@@ -126,6 +151,8 @@ void ATPS_Minion::PostInitializeComponents()
 
 	OnActorBeginOverlap.AddDynamic(this, &ATPS_Minion::OnCatchPlayer);
 	GetPawnSense()->OnSeePawn.AddDynamic(this, &ATPS_Minion::OnCharacterDetected);
+	GetPawnSense()->OnHearNoise.AddDynamic(this, &ATPS_Minion::OnHearNoise);
+	OnTakeAnyDamage.AddDynamic(this, &ATPS_Minion::OnDamage);
 }
 
 void ATPS_Minion::OnCharacterDetected(APawn* Player)
@@ -152,5 +179,20 @@ void ATPS_Minion::OnCatchPlayer(AActor* OverlappedActor, AActor* OtherActor)
 
 	GetWorld()->GetTimerManager().SetTimer(MinionAttackTimerHandle, this, &ATPS_Minion::SetNextPosition, attackInterval);
 
+}
+
+void ATPS_Minion::OnDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
+{
+	Health -= Damage;
+
+	if (Health > 0)
+		return;
+
+	if (SpawnedPickup)
+	{
+		GetWorld()->SpawnActor<ATPS_BasePickup>(SpawnedPickup, GetActorLocation(), GetActorRotation());
+	}
+
+	Destroy();
 }
 

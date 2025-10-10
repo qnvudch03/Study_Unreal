@@ -24,6 +24,7 @@
 #include "Data/IHDataSubsystem.h"
 #include "Data/IHInputDataAsset.h"
 #include "IHGameplayTags.h"
+#include "../Weapon/TPS_BaseWeaponProjectile.h"
 
 UIHPlayerFireComponent::UIHPlayerFireComponent()
 {
@@ -51,6 +52,8 @@ void UIHPlayerFireComponent::BeginPlay()
 			HandSocket->AttachActor(Weapon, OwnerCharacter->GetMesh());
 		}
 	}
+
+	ProjectileClass = ATPS_BaseWeaponProjectile::StaticClass();
 }
 
 void UIHPlayerFireComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -77,6 +80,7 @@ void UIHPlayerFireComponent::SetupInputBinding(UEnhancedInputComponent* PlayerIn
 		return;
 
 	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Fire), ETriggerEvent::Started, this, &UIHPlayerFireComponent::InputFire);
+	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_DrawKnife), ETriggerEvent::Triggered, this, &UIHPlayerFireComponent::Throw_Knife_Server);
 }
 
 // 에임 오프셋
@@ -237,6 +241,27 @@ void UIHPlayerFireComponent::InputFire(const FInputActionValue& InputValue)
 				}
 			}
 		}
+	}
+}
+
+void UIHPlayerFireComponent::SetProjectileClass(TSubclassOf<class ATPS_BaseWeaponProjectile> NewProjectileClass)
+{
+	ProjectileClass = NewProjectileClass;
+}
+
+void UIHPlayerFireComponent::Throw_Knife_Server_Implementation()
+{
+	if (ProjectileClass)
+	{
+		const auto Character = Cast<AIHPlayer>(GetOwner());
+		const auto ProjectileSpawnLocation = Character->GetActorLocation() + Character->GetActorForwardVector() * 50;
+		const auto ProjectileSpawnRotation = Character->CamComp->GetComponentRotation();
+
+		auto ProjectileSpawnParams = FActorSpawnParameters();
+		ProjectileSpawnParams.Owner = GetOwner();
+		ProjectileSpawnParams.Instigator = Character;
+
+		GetWorld()->SpawnActor<ATPS_BaseWeaponProjectile>(ProjectileClass, ProjectileSpawnLocation, ProjectileSpawnRotation, ProjectileSpawnParams);
 	}
 }
 

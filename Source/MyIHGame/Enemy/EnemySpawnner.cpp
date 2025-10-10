@@ -20,6 +20,9 @@ void AEnemySpawnner::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (GetLocalRole() != ENetRole::ROLE_Authority)
+		return;
+
 	TArray<AActor*> Points;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AIHEnemySpawnPoint::StaticClass(), Points);
 
@@ -45,12 +48,25 @@ void AEnemySpawnner::Tick(float DeltaTime)
 
 void AEnemySpawnner::SpawnEnemy()
 {
-	int randomIndex = FMath::RandRange(0, spawnPoints.Num() - 1);
+	if (GetLocalRole() != ENetRole::ROLE_Authority)
+		return;
 
-	FVector spanwedPosition = spawnPoints[randomIndex]->GetActorLocation();
+	int randomPositionIndex = FMath::RandRange(0, spawnPoints.Num() - 1);
+	int randomMinionIndex = FMath::RandRange(0, MinionList.Num() - 1);
 
-	//GetWorld()->SpawnActor<ATPS_Minion>(ATPS_Minion::StaticClass(), spanwedPosition, FRotator::ZeroRotator);
-	GetWorld()->SpawnActor<AIHEnemy>(AIHEnemy::StaticClass(), spanwedPosition, FRotator::ZeroRotator);
+	FVector spanwedPosition = spawnPoints[randomPositionIndex]->GetActorLocation();
+
+	if (MinionList.Num() == 0)
+	{
+		GetWorld()->SpawnActor<ATPS_Minion>(ATPS_Minion::StaticClass(), spanwedPosition, FRotator::ZeroRotator);
+	}
+
+	else
+	{
+		GetWorld()->SpawnActor<ATPS_Minion>(MinionList[randomMinionIndex], spanwedPosition, FRotator::ZeroRotator);
+	}
+	
+	//GetWorld()->SpawnActor<AIHEnemy>(AIHEnemy::StaticClass(), spanwedPosition, FRotator::ZeroRotator);
 	
 
 	GetWorld()->GetTimerManager().SetTimer(spawnTimerHandle, this, &AEnemySpawnner::SpawnEnemy, SpawnInterval);

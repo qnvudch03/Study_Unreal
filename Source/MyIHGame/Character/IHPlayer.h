@@ -122,4 +122,8 @@ private:
 
 	UPROPERTY()
 	AActor* InteractableActor;
+
+private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MY|Stealth", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPawnNoiseEmitterComponent> NoiseEmitter;
 };

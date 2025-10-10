@@ -29,23 +29,22 @@ void UIHEnemyFSM::BeginPlay()
 	Super::BeginPlay();
 	// ...
 	// 월드에서 ATPSPlayer 타깃 찾아오기
-	AActor* Actor = UGameplayStatics::GetActorOfClass(GetWorld(), AIHPlayer::StaticClass());	
+	AActor* Actor = UGameplayStatics::GetActorOfClass(GetWorld(), AIHPlayer::StaticClass());
 	Target = Cast<AIHPlayer>(Actor);
 
 	// 싱글게임이라 PlayerController 한개만 존재
 	//APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
 	//Target = Cast<AIHPlayer>(PlayerController->GetPawn());
-	
+
 	// 소유 객체 가져오기
 	OwnerCharacter = Cast<AIHEnemy>(GetOwner());
 	AnimInst = Cast<UIHEnemyAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance());
 
-	if (OwnerCharacter)
-	{
-		// AAIController 할당하기
-		AI = Cast<AAIController>(OwnerCharacter->GetController());
-	}
-	
+
+	// AAIController 할당하기
+	AI = Cast<AAIController>(OwnerCharacter->GetController());
+
+
 }
 
 
@@ -100,7 +99,7 @@ void UIHEnemyFSM::MoveState()
 	// 목적지까지 방향 벡터 구하기 : 목적지 - 출발지
 	FVector Destination = Target->GetActorLocation();
 	FVector Dir = Destination - OwnerCharacter->GetActorLocation();
-	
+
 	//OwnerCharacter->AddMovementInput(Dir.GetSafeNormal());
 	auto ns = UNavigationSystemV1::GetNavigationSystem(GetWorld());
 	// 목적지 길 찾기 경로 데이터 검색
@@ -111,9 +110,9 @@ void UIHEnemyFSM::MoveState()
 
 	if (AI == nullptr)
 		return;
-	
+
 	AI->BuildPathfindingQuery(Req, Query);
-	
+
 	// 길 찾기 결과 가져오기
 	FPathFindingResult r = ns->FindPathSync(Query);
 	// 경로 데이터가 있고, 완전한 경로일 경우에만
@@ -155,7 +154,7 @@ void UIHEnemyFSM::AttackState()
 {
 	// 목표: 일정 시간에 한 번씩 공격하고 싶다.
 	CurrentTime += GetWorld()->DeltaTimeSeconds;
-	
+
 	// 공격 타임 시간 만족
 	if (CurrentTime > AttackDelayTime)
 	{
@@ -246,7 +245,7 @@ void UIHEnemyFSM::OnDamageProcess()
 			OwnerCharacter->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			AnimInst->PlayDamageAnim(TEXT("Die"));
 		}
-	}	
+	}
 	AnimInst->AnimState = State;
 	AI->StopMovement();
 }
@@ -254,8 +253,8 @@ void UIHEnemyFSM::OnDamageProcess()
 // 랜덤 위치 가져오기
 bool UIHEnemyFSM::GetRandomPositionInNavMesh(FVector CenterLocation, float Radius, FVector& Dest)
 {
-	if (OwnerCharacter->GetLocalRole() != ENetRole::ROLE_Authority)
-		return false;
+	/*if (OwnerCharacter->GetLocalRole() != ENetRole::ROLE_Authority)
+		return false;*/
 
 	auto NS = UNavigationSystemV1::GetNavigationSystem(GetWorld());
 

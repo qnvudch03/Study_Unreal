@@ -85,4 +85,13 @@ public:
 	// 총알 발사 처리함수
 	void InputFire(const struct FInputActionValue& InputValue);
 	// --------------------------------------//
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Projectile")
+	TSubclassOf<class ATPS_BaseWeaponProjectile> ProjectileClass;
+
+	UFUNCTION(Server, Reliable)
+	void Throw_Knife_Server();
+
+	void SetProjectileClass(TSubclassOf<class ATPS_BaseWeaponProjectile> NewProjectileClass);
+
 };

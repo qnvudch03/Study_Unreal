@@ -16,5 +16,8 @@ class MYIHGAME_API ATPS_GameMode : public AGameMode
 
 public:
 	ATPS_GameMode();
+
+	UFUNCTION(BlueprintCallable, Category = "MY|Minions")
+	void AlertMinions(class AActor* AlertInstigator, const FVector& Location, const float Radius);
 	
 };

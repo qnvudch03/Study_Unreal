@@ -26,19 +26,25 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Minion AI")
+	UFUNCTION()
+	void OnHearNoise(APawn* PawnInstigator, const FVector& Location, float Volume);
+
+	UFUNCTION(BlueprintCallable, Category = "MY|Minion AI")
+	void GoToLocation(const FVector& Location);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Minion AI")
 	float PatrolSpeed = 150.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Minion AI")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Minion AI")
 	float ChaseSpeed = 350.0f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Minion AI")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Minion AI")
 	float PatrolRadius = 50000.0f;
 
-	UFUNCTION(BlueprintCallable, Category = "Minion AI")
+	UFUNCTION(BlueprintCallable, Category = "MY|Minion AI")
 	void SetNextPosition();
 
-	UFUNCTION(BlueprintCallable, Category = "Minion AI")
+	UFUNCTION(BlueprintCallable, Category = "MY|Minion AI")
 	void Chase(APawn* Player);
 
 	virtual void PostInitializeComponents() override;
@@ -68,4 +74,17 @@ private:
 
 	float attackInterval = 0.8f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Minion AI", meta = (AllowPrivateAccess = "true"))
+	float AlertRadius = 6000.0f;
+
+public:
+	//Combat
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Combat")
+	float Health = 5.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Combat")
+	TSubclassOf<class ATPS_BasePickup> SpawnedPickup;
+
+	UFUNCTION()
+	void OnDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser);
 };

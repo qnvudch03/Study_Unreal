@@ -30,5 +30,8 @@ private:
 	float SpawnInterval = 5;
 	TArray<class AIHEnemySpawnPoint*> spawnPoints;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|MinionsList", meta = (AllowPrivateAccess = "true"))
+	TArray<TSubclassOf<class ATPS_Minion>> MinionList;
+
 	void SpawnEnemy();
 };
