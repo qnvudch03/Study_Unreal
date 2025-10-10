@@ -40,6 +40,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "IHGame|Anim")
 	class UAnimMontage* AttackAnimMontage;
 
+	UPROPERTY(EditDefaultsOnly, Category = "IHGame|Anim")
+	class UAnimMontage* DrawWeaponAnimMontage;
+
 	// 에임 오프셋값
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "IHGame|Value")
 	float AO_Yaw = 0;
@@ -52,4 +55,6 @@ public:
 
 	// 공격 애니메이션 재생 함수
 	void PlayAttackAnim(bool bIsRun);
+
+	void PlayDrawingAnim();
 };

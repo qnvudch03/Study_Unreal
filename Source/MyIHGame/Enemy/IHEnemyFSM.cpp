@@ -11,6 +11,7 @@
 #include "AIController.h"
 #include "NavigationSystem.h"
 #include "Navigation/PathFollowingComponent.h"
+#include <Net/UnrealNetwork.h>
 
 // Sets default values for this component's properties
 UIHEnemyFSM::UIHEnemyFSM()
@@ -18,6 +19,8 @@ UIHEnemyFSM::UIHEnemyFSM()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
+
+	SetIsReplicatedByDefault(true);
 
 	// ...
 }
@@ -53,9 +56,13 @@ void UIHEnemyFSM::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	if (GetOwner()->HasAuthority() == true)
+	{
+		FString logMsg = UEnum::GetValueAsString(State);
+		GEngine->AddOnScreenDebugMessage(0, 1, FColor::Cyan, logMsg);
+	}
 	// ...
-	FString logMsg = UEnum::GetValueAsString(State);
-	GEngine->AddOnScreenDebugMessage(0, 1, FColor::Cyan, logMsg);
+	
 
 	switch (State)
 	{
@@ -77,6 +84,29 @@ void UIHEnemyFSM::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 	}
 }
 
+void UIHEnemyFSM::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UIHEnemyFSM, State);
+}
+
+void UIHEnemyFSM::OnStateChange_Server_Implementation(EEnemyState NewState)
+{
+	State = NewState;
+}
+
+void UIHEnemyFSM::OnRep_State()
+{
+	auto test = GetOwner();
+	auto test2 = GetOwner()->GetLocalRole();
+
+	if (GetOwner()->GetLocalRole() == ENetRole::ROLE_Authority)
+	{
+		OnStateChange_Server(State);
+	}
+}
+
 void UIHEnemyFSM::IdleState()
 {
 	CurrentTime += GetWorld()->DeltaTimeSeconds;
@@ -84,7 +114,10 @@ void UIHEnemyFSM::IdleState()
 	// 대기 시간을 초과했다면
 	if (CurrentTime > IdleDelayTime)
 	{
-		State = EEnemyState::Move;
+		if (GetOwner()->GetLocalRole() == ENetRole::ROLE_Authority)
+		{
+			State = EEnemyState::Move;
+		}
 		CurrentTime = 0;
 
 		AnimInst->AnimState = State;
@@ -108,30 +141,29 @@ void UIHEnemyFSM::MoveState()
 	Req.SetAcceptanceRadius(3);
 	Req.SetGoalLocation(Destination);
 
-	if (AI == nullptr)
-		return;
-
-	AI->BuildPathfindingQuery(Req, Query);
-
-	// 길 찾기 결과 가져오기
-	FPathFindingResult r = ns->FindPathSync(Query);
-	// 경로 데이터가 있고, 완전한 경로일 경우에만
-	if (r.Result == ENavigationQueryResult::Success && r.Path.IsValid() && !r.Path->IsPartial())
+	if (AI != nullptr)
 	{
-		// 길찾기 성공시 타깃쪽으로 이동
-		AI->MoveToLocation(Destination);
-	}
-	else
-	{
-		// 랜덤 위치로 이동
-		auto Result = AI->MoveToLocation(RandomPos);
-		if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
+		AI->BuildPathfindingQuery(Req, Query);
+
+		// 길 찾기 결과 가져오기
+		FPathFindingResult r = ns->FindPathSync(Query);
+		// 경로 데이터가 있고, 완전한 경로일 경우에만
+		if (r.Result == ENavigationQueryResult::Success && r.Path.IsValid() && !r.Path->IsPartial())
 		{
-			// 목적지에 도착하면 현재위치 기준으로 새로운 랜덤 위치 가져오기
-			GetRandomPositionInNavMesh(OwnerCharacter->GetActorLocation(), 500, RandomPos);
+			// 길찾기 성공시 타깃쪽으로 이동
+			AI->MoveToLocation(Destination);
+		}
+		else
+		{
+			// 랜덤 위치로 이동
+			auto Result = AI->MoveToLocation(RandomPos);
+			if (Result == EPathFollowingRequestResult::AlreadyAtGoal)
+			{
+				// 목적지에 도착하면 현재위치 기준으로 새로운 랜덤 위치 가져오기
+				GetRandomPositionInNavMesh(OwnerCharacter->GetActorLocation(), 500, RandomPos);
+			}
 		}
 	}
-
 
 	// 공격 가능한 범위다
 	// 뒤쪽에 있을수도 있으니 각도 체크
@@ -139,10 +171,20 @@ void UIHEnemyFSM::MoveState()
 	float Angle = FMath::RadiansToDegrees(FMath::Acos(DotValue));
 	if (Dir.Size() < AttackRange && Angle < AttachSightAngle)
 	{
-		AI->StopMovement();
+		if (GetOwner()->GetLocalRole() == ENetRole::ROLE_Authority)
+		{
+			AI->StopMovement();
 
-		State = EEnemyState::Attack;
+			State = EEnemyState::Attack;
+		}
+		
+		if (GetOwner()->HasAuthority() == false)
+		{
+			int apple = 10;
+			GEngine->AddOnScreenDebugMessage(0, 1, FColor::Cyan, TEXT("Test"));
+		}
 
+		auto roll = GetOwner()->GetLocalRole();
 		AnimInst->AnimState = State;
 		AnimInst->bAttackPlay = true;
 		CurrentTime = AttackDelayTime;
@@ -176,6 +218,7 @@ void UIHEnemyFSM::AttackState()
 		float Distance = FVector::Distance(Target->GetActorLocation(), OwnerCharacter->GetActorLocation());
 		if (Distance > AttackRange || Angle > AttachSightAngle)
 		{
+
 			State = EEnemyState::Move;
 			AnimInst->AnimState = State;
 
@@ -192,7 +235,11 @@ void UIHEnemyFSM::DamageState()
 	// 경과시간이 데미지 처리 시간을 넘었다
 	if (CurrentTime > DamageDelayTime)
 	{
-		State = EEnemyState::Idle;
+		if (GetOwner()->HasAuthority())
+		{
+			State = EEnemyState::Idle;
+		}
+		
 		CurrentTime = 0;
 
 		AnimInst->AnimState = State;
@@ -226,10 +273,12 @@ void UIHEnemyFSM::OnDamageProcess()
 	if (Hp > 0)
 	{
 		// 상태를 피격으로 전환
-		State = EEnemyState::Damage;
-
+		if (GetOwner()->GetLocalRole() == ENetRole::ROLE_Authority)
+		{
+			State = EEnemyState::Damage;
+		}
+		
 		CurrentTime = 0;
-
 		// 피격 애니메이션 재생
 		int32 index = FMath::RandRange(0, 1);
 		FString sectionName = FString::Printf(TEXT("Damage%d"), index);
@@ -241,7 +290,11 @@ void UIHEnemyFSM::OnDamageProcess()
 		// 상태를 죽음으로 전환
 		if (State != EEnemyState::Die)
 		{
-			State = EEnemyState::Die;
+			if (GetOwner()->GetLocalRole() == ENetRole::ROLE_Authority)
+			{
+				State = EEnemyState::Die;
+			}
+			
 			OwnerCharacter->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 			AnimInst->PlayDamageAnim(TEXT("Die"));
 		}

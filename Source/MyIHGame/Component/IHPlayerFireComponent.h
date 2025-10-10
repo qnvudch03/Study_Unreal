@@ -89,9 +89,43 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Projectile")
 	TSubclassOf<class ATPS_BaseWeaponProjectile> ProjectileClass;
 
-	UFUNCTION(Server, Reliable)
-	void Throw_Knife_Server();
+	
 
 	void SetProjectileClass(TSubclassOf<class ATPS_BaseWeaponProjectile> NewProjectileClass);
+
+	UFUNCTION(BlueprintCallable)
+	void ThoringKnife();
+
+	// 로컬 함수
+	void InputThrowingAction();
+
+	/*UFUNCTION(Server, Unreliable)
+	void PlayThrowingAnim_Server();*/
+
+
+	/*UFUNCTION(NetMulticast, Reliable)
+	void Throw_Knife_Server();*/
+
+	/*UFUNCTION(Server, Reliable)
+	void ThrowingAction_Server();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void ActionThrowing();
+
+	UFUNCTION(Server, Reliable)
+	void SpawnThrowing_Server();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SpawnThrowing_Multicast();*/
+
+	UFUNCTION(Server, Unreliable)
+	void ThrowingAction_Server2();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void ThrowingAnimPlay_Multicast();
+
+	UFUNCTION(Server, Reliable)
+	void SpawnThrowing();
+
 
 };

@@ -91,7 +91,7 @@ public:
 	// 컴포넌트들
 	UPROPERTY(VisibleAnywhere, Category = "IHGame")
 	class UIHPlayerMoveComponent* MoveComp;
-	UPROPERTY(VisibleAnywhere, Category = "IHGame")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "IHGame")
 	class UIHPlayerFireComponent* FireComp;
 
 	// 현재 체력

@@ -82,3 +82,8 @@ void UIHPlayerAnimInstance::PlayAttackAnim(bool bIsRun)
 	Montage_Play(AttackAnimMontage);
 	Montage_JumpToSection(SectionName, AttackAnimMontage);
 }
+
+void UIHPlayerAnimInstance::PlayDrawingAnim()
+{
+	Montage_Play(DrawWeaponAnimMontage);
+}

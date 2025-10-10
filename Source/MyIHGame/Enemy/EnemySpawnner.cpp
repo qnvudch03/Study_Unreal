@@ -66,7 +66,7 @@ void AEnemySpawnner::SpawnEnemy()
 		GetWorld()->SpawnActor<ATPS_Minion>(MinionList[randomMinionIndex], spanwedPosition, FRotator::ZeroRotator);
 	}
 	
-	//GetWorld()->SpawnActor<AIHEnemy>(AIHEnemy::StaticClass(), spanwedPosition, FRotator::ZeroRotator);
+	GetWorld()->SpawnActor<AIHEnemy>(AIHEnemy::StaticClass(), spanwedPosition, FRotator::ZeroRotator);
 	
 
 	GetWorld()->GetTimerManager().SetTimer(spawnTimerHandle, this, &AEnemySpawnner::SpawnEnemy, SpawnInterval);

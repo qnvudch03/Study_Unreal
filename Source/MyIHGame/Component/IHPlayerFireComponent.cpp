@@ -29,6 +29,9 @@
 UIHPlayerFireComponent::UIHPlayerFireComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+
+	// 컴포넌트도 복제를 시켜줘야. 비신뢰성 RPC 호출이 잘된다.
+	SetIsReplicatedByDefault(true);
 }
 
 void UIHPlayerFireComponent::BeginPlay()
@@ -80,7 +83,7 @@ void UIHPlayerFireComponent::SetupInputBinding(UEnhancedInputComponent* PlayerIn
 		return;
 
 	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Fire), ETriggerEvent::Started, this, &UIHPlayerFireComponent::InputFire);
-	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_DrawKnife), ETriggerEvent::Triggered, this, &UIHPlayerFireComponent::Throw_Knife_Server);
+	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_DrawKnife), ETriggerEvent::Triggered, this, &UIHPlayerFireComponent::InputThrowingAction);
 }
 
 // 에임 오프셋
@@ -208,13 +211,13 @@ void UIHPlayerFireComponent::InputFire(const FInputActionValue& InputValue)
 
 			// Hit 사운드
 			UGameplayStatics::PlaySoundAtLocation(this, HitSound, HitInfo.ImpactPoint);
-			
+
 			// 탄흔 흔적 데칼 
-			UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), 
+			UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(),
 				BulletDecalMaterial,	// 데칼 머티리얼 자체를 변수로
 				DecalSize,	// 사이즈는 원하는 데칼 크기
 				HitInfo.ImpactPoint,
-				HitInfo.ImpactNormal.Rotation(), 
+				HitInfo.ImpactNormal.Rotation(),
 				DecalLifetime);	// 탄흔이 몇초동안 유지되어야 하는지
 
 			Decal->SetFadeScreenSize(0); // 화면 크기에 따른 페이드 설정
@@ -249,7 +252,48 @@ void UIHPlayerFireComponent::SetProjectileClass(TSubclassOf<class ATPS_BaseWeapo
 	ProjectileClass = NewProjectileClass;
 }
 
-void UIHPlayerFireComponent::Throw_Knife_Server_Implementation()
+void UIHPlayerFireComponent::InputThrowingAction()
+{
+	UIHPlayerAnimInstance* AnimInstance = Cast<UIHPlayerAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance());
+	if (AnimInstance)
+	{
+		AnimInstance->PlayDrawingAnim();
+	}
+
+	ThrowingAction_Server2();
+
+	/*if (GetOwner()->GetLocalRole() == ENetRole::ROLE_Authority)
+	{
+		ThrowingAnimPlay_Multicast();
+	}
+
+	else
+	{
+		ThrowingAction_Server2();
+	}*/
+
+}
+
+void UIHPlayerFireComponent::ThrowingAnimPlay_Multicast_Implementation()
+{
+	UIHPlayerAnimInstance* AnimInstance = Cast<UIHPlayerAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance());
+	if (AnimInstance)
+	{
+		AnimInstance->PlayDrawingAnim();
+	}
+}
+
+void UIHPlayerFireComponent::ThrowingAction_Server2_Implementation()
+{
+	ThrowingAnimPlay_Multicast();
+}
+
+void UIHPlayerFireComponent::ThoringKnife()
+{
+	SpawnThrowing();
+}
+
+void UIHPlayerFireComponent::SpawnThrowing_Implementation()
 {
 	if (ProjectileClass)
 	{
@@ -264,6 +308,74 @@ void UIHPlayerFireComponent::Throw_Knife_Server_Implementation()
 		GetWorld()->SpawnActor<ATPS_BaseWeaponProjectile>(ProjectileClass, ProjectileSpawnLocation, ProjectileSpawnRotation, ProjectileSpawnParams);
 	}
 }
+
+//void UIHPlayerFireComponent::ThoringKnife()
+//{
+//	SpawnThrowing_Server();
+//}
+//
+//void UIHPlayerFireComponent::SpawnThrowing_Server_Implementation()
+//{
+//	//SpawnThrowing_Multicast();
+//
+//	if (ProjectileClass)
+//	{
+//		const auto Character = Cast<AIHPlayer>(GetOwner());
+//		const auto ProjectileSpawnLocation = Character->GetActorLocation() + Character->GetActorForwardVector() * 50;
+//		const auto ProjectileSpawnRotation = Character->CamComp->GetComponentRotation();
+//
+//		auto ProjectileSpawnParams = FActorSpawnParameters();
+//		ProjectileSpawnParams.Owner = GetOwner();
+//		ProjectileSpawnParams.Instigator = Character;
+//
+//		GetWorld()->SpawnActor<ATPS_BaseWeaponProjectile>(ProjectileClass, ProjectileSpawnLocation, ProjectileSpawnRotation, ProjectileSpawnParams);
+//	}
+//}
+//
+//void UIHPlayerFireComponent::SpawnThrowing_Multicast_Implementation()
+//{
+//	if (GetOwner()->GetLocalRole() != ENetRole::ROLE_Authority)
+//		return;
+//
+//	if (ProjectileClass)
+//	{
+//		const auto Character = Cast<AIHPlayer>(GetOwner());
+//		const auto ProjectileSpawnLocation = Character->GetActorLocation() + Character->GetActorForwardVector() * 50;
+//		const auto ProjectileSpawnRotation = Character->CamComp->GetComponentRotation();
+//
+//		auto ProjectileSpawnParams = FActorSpawnParameters();
+//		ProjectileSpawnParams.Owner = GetOwner();
+//		ProjectileSpawnParams.Instigator = Character;
+//
+//		GetWorld()->SpawnActor<ATPS_BaseWeaponProjectile>(ProjectileClass, ProjectileSpawnLocation, ProjectileSpawnRotation, ProjectileSpawnParams);
+//	}
+//}
+//
+//void UIHPlayerFireComponent::ThrowingAction_Server_Implementation()
+//{
+//	auto Roll = GetOwner()->GetLocalRole();
+//
+//	ActionThrowing();
+//	//ActionDrowing
+//}
+//
+//void UIHPlayerFireComponent::ActionThrowing_Implementation()
+//{
+//	UIHPlayerAnimInstance* AnimInstance = Cast<UIHPlayerAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance());
+//	if (AnimInstance)
+//	{
+//		AnimInstance->PlayDrawingAnim();
+//	}
+//}
+//
+//void UIHPlayerFireComponent::Throw_Knife_Server_Implementation()
+//{
+//	UIHPlayerAnimInstance* AnimInstance = Cast<UIHPlayerAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance());
+//	if (AnimInstance)
+//	{
+//		AnimInstance->PlayDrawingAnim();
+//	}
+//}
 
 void UIHPlayerFireComponent::CheckCameraVisible()
 {

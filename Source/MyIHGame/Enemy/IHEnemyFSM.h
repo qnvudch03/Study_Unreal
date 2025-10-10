@@ -36,8 +36,20 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "IHGame|FSM")
+	//UPROPERTY(ReplicatedUsing = "State_Implement", VisibleAnywhere, BlueprintReadOnly, Category = "IHGame|FSM")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "IHGame|FSM", ReplicatedUsing = "OnRep_State")
 	EEnemyState State = EEnemyState::Idle;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void OnStateChange_Server(EEnemyState NewState);
+
+	virtual void OnStateChange_Server_Implementation(EEnemyState NewState);
+
+
+	UFUNCTION()
+	void OnRep_State();
 		
 	void IdleState();
 	void MoveState();
@@ -76,7 +88,7 @@ public:
 	class AIHPlayer* Target;
 
 	// 사용 중인 애니메이션 블루프린트
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MY|AnimInst")
 	class UIHEnemyAnimInstance* AnimInst;
 
 	// 오너
