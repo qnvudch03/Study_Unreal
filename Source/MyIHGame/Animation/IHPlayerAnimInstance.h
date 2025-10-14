@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "../Util/IHDefine.h"
 #include "IHPlayerAnimInstance.generated.h"
 
 /**
@@ -57,4 +58,7 @@ public:
 	void PlayAttackAnim(bool bIsRun);
 
 	void PlayDrawingAnim();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IHGame|Value")
+	ETurnInPlace TurnInPlaceType = ETurnInPlace::ETIP_NotTurning;
 };

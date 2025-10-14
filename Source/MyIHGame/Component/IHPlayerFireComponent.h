@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Component/IHPlayerBaseComponent.h"
+#include "../Util/IHDefine.h"
 #include "IHPlayerFireComponent.generated.h"
 
 /**
@@ -84,6 +85,10 @@ public:
 	// ---------------- 입력 -----------------//
 	// 총알 발사 처리함수
 	void InputFire(const struct FInputActionValue& InputValue);
+	void CompleteInputFire(const struct FInputActionValue& InputValue);
+
+	FTimerHandle rifleAttackTimerHandler;
+	bool canFire = true;
 	// --------------------------------------//
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Projectile")
@@ -127,5 +132,29 @@ public:
 	UFUNCTION(Server, Reliable)
 	void SpawnThrowing();
 
+	//turn in place
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|Turn in Place")
+	float TurnInPlaceAngle = 90.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|Turn in Place")
+	float TurnInPlaceTime = 5.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|Turn in Place")
+	float TurnInPlaceEndAngle = 3.0f;
+
+	ETurnInPlace TurnInPlaceType = ETurnInPlace::ETIP_NotTurning;
+	float AimOFfset_InterpYaw = 0;
+
+	void TurnInPlace(float deltaTime);
+
+	float GetRemoveControlYaw();
+
+
+	//크로스헤어
+	void UpdtaeCrosshairSpread(float DeltaTime);
+
+	float TotalCrosshairFactor = 0;
+
+	float CrosshairFireFactor = 0;
+	FVector GetRandomAimDirection();
 };

@@ -35,4 +35,16 @@ public:
 	// 총기의 최대 사정거리
 	UPROPERTY(EditAnywhere, Category = "IHGame|Value");
 	float MaxDistance = 5000;
+
+	UPROPERTY(EditAnywhere, Category = "MY|Value")
+	float CrosshairSpreadMAx = 5.0f;
+
+	UPROPERTY(EditAnywhere, Category = "MY|Value")
+	float CrosshairSpreadMin = 2.0f;
+
+	UPROPERTY(EditAnywhere, Category = "MY|Value")
+	float CrosshairSpreadFire = 8.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|FPS")
+	float AttackSpeed = 20;
 };

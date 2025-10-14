@@ -29,7 +29,28 @@ void UIHFuncCallAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
     if (!MeshComp) return;
     if (!TargetClass) return;
     
-    UObject* Target = TargetClass->IsChildOf<UAnimInstance>() ? Cast<UObject>(MeshComp->GetAnimInstance()) : MeshComp->GetOwner();
+    //UObject* Target = TargetClass->IsChildOf<UAnimInstance>() ? Cast<UObject>(MeshComp->GetAnimInstance()) : MeshComp->GetOwner();
+
+    UObject* Target = nullptr;
+
+    if (TargetClass->IsChildOf<UAnimInstance>())
+    {
+        Target = Cast<UObject>(MeshComp->GetAnimInstance());
+    }
+
+    else if (TargetClass->IsChildOf<UActorComponent>())
+    {
+        AActor* TargetActor = MeshComp->GetOwner();
+        if (TargetActor)
+        {
+            Target = TargetActor->FindComponentByClass(TargetClass);
+        }
+    }
+
+    else
+    {
+        Target = MeshComp->GetOwner();
+    }
 
     if (!Target) return;
 

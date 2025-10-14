@@ -25,6 +25,7 @@
 #include "Data/IHInputDataAsset.h"
 #include "IHGameplayTags.h"
 #include "../Weapon/TPS_BaseWeaponProjectile.h"
+#include "../UI/IHHUD.h"
 
 UIHPlayerFireComponent::UIHPlayerFireComponent()
 {
@@ -68,6 +69,11 @@ void UIHPlayerFireComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 	// 에임 오프셋
 	UpdateAimOffset(DeltaTime);
+
+	if (OwnerCharacter->IsLocallyControlled())
+	{
+		UpdtaeCrosshairSpread(DeltaTime);
+	}
 }
 
 void UIHPlayerFireComponent::SetupInputBinding(UEnhancedInputComponent* PlayerInput)
@@ -82,7 +88,8 @@ void UIHPlayerFireComponent::SetupInputBinding(UEnhancedInputComponent* PlayerIn
 	if (InputData == nullptr)
 		return;
 
-	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Fire), ETriggerEvent::Started, this, &UIHPlayerFireComponent::InputFire);
+	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Fire), ETriggerEvent::Triggered, this, &UIHPlayerFireComponent::InputFire);
+	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_Fire), ETriggerEvent::Completed, this, &UIHPlayerFireComponent::CompleteInputFire);
 	PlayerInput->BindAction(InputData->FindInputActionByTag(IHGameplayTags::Input_Action_DrawKnife), ETriggerEvent::Triggered, this, &UIHPlayerFireComponent::InputThrowingAction);
 }
 
@@ -106,13 +113,15 @@ void UIHPlayerFireComponent::UpdateAimOffset(float DeltaTime)
 		// 카메라의 회전값을 따라서 AimOffset 값을 계산한다.
 		// 컨트롤러의 회전값 = 카메라의 회전값
 		// 컨트롤러 회전 yaw 사용 옵션을 체크해서
-		float CurrentAimYaw = OwnerCharacter->GetControlRotation().Yaw;
+		float CurrentAimYaw = GetRemoveControlYaw();
 		float DeltaYaw = FMath::FindDeltaAngleDegrees(AimOffset_StartYaw, CurrentAimYaw);
 		// -180~180
 		AimOffset_Yaw = DeltaYaw;
 
 		// 일시적으로 카메라=캐릭터의 회전 싱크를 끊는다.
-		OwnerCharacter->bUseControllerRotationYaw = false;
+		//OwnerCharacter->bUseControllerRotationYaw = false;
+
+		TurnInPlace(DeltaTime);
 
 		//PRINT_LOG(TEXT("AO_StartYaw : %f, AO_Yaw : %f"), AimOffset_StartYaw, AimOffset_Yaw);
 	}
@@ -120,10 +129,12 @@ void UIHPlayerFireComponent::UpdateAimOffset(float DeltaTime)
 	if (Speed > 0 || bIsInAir)
 	{
 		// 이동중일때는 카메라의 회전값 = AimOffset의 기준값
-		AimOffset_StartYaw = OwnerCharacter->GetControlRotation().Yaw;
+		AimOffset_StartYaw = GetRemoveControlYaw();
 		AimOffset_Yaw = 0;	// Yaw값은 가만히 서있을때만 갱신된다.
 
 		OwnerCharacter->bUseControllerRotationYaw = true;
+
+		TurnInPlaceType = ETurnInPlace::ETIP_NotTurning;
 	}
 
 	// Pitch
@@ -147,19 +158,32 @@ void UIHPlayerFireComponent::InputFire(const FInputActionValue& InputValue)
 		return;
 	}
 
+	if (!canFire)
+		return;
+
 	GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(FireCameraShake);
 
 	UIHPlayerAnimInstance* AnimInstance = Cast<UIHPlayerAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance());
 	if (AnimInstance)
 	{
-		//@TODO
-		// Move Component에서 가져온다.
 		AnimInstance->PlayAttackAnim(OwnerCharacter->MoveComp->bIsRun);
+
+		APlayerController* playercontroller = Cast<APlayerController>(OwnerCharacter->GetController());
+
+		if (Weapon == nullptr)
+			return;
+
+		AIHHUD* HUD = Cast<AIHHUD>(playercontroller->GetHUD());
+		if (HUD == nullptr)
+			return;
+		CrosshairFireFactor = Weapon->CrosshairSpreadFire;
+
+
 	}
 
 	{
 		FVector StartPos = CamComp->GetComponentLocation();
-		FVector EndPos = CamComp->GetComponentLocation() + CamComp->GetForwardVector() * 5000;
+		FVector EndPos = CamComp->GetComponentLocation() + GetRandomAimDirection() * Weapon->MaxDistance;
 		FVector Dir = EndPos - StartPos;
 		Dir.Normalize();
 
@@ -245,6 +269,16 @@ void UIHPlayerFireComponent::InputFire(const FInputActionValue& InputValue)
 			}
 		}
 	}
+
+	canFire = false;
+
+	GetWorld()->GetTimerManager().SetTimer(rifleAttackTimerHandler, FTimerDelegate::CreateLambda([this]() {canFire = true; }), 1 / Weapon->AttackSpeed, false);
+}
+
+void UIHPlayerFireComponent::CompleteInputFire(const FInputActionValue& InputValue)
+{
+	GetWorld()->GetTimerManager().ClearTimer(rifleAttackTimerHandler);
+	canFire = true;
 }
 
 void UIHPlayerFireComponent::SetProjectileClass(TSubclassOf<class ATPS_BaseWeaponProjectile> NewProjectileClass)
@@ -272,6 +306,88 @@ void UIHPlayerFireComponent::InputThrowingAction()
 		ThrowingAction_Server2();
 	}*/
 
+}
+
+void UIHPlayerFireComponent::TurnInPlace(float deltaTime)
+{
+	if (TurnInPlaceType == ETurnInPlace::ETIP_NotTurning)
+	{
+		AimOFfset_InterpYaw = AimOffset_Yaw;
+	}
+
+
+	if (AimOffset_Yaw < -TurnInPlaceAngle)
+	{
+		TurnInPlaceType = ETurnInPlace::ETIP_Left;
+	}
+
+	else if (AimOffset_Yaw > TurnInPlaceAngle)
+	{
+		TurnInPlaceType = ETurnInPlace::ETIP_Right;
+	}
+
+	if (TurnInPlaceType != ETurnInPlace::ETIP_NotTurning)
+	{
+		AimOFfset_InterpYaw = FMath::FInterpTo(AimOffset_Yaw, 0.0f, deltaTime, TurnInPlaceTime);
+		AimOffset_Yaw = AimOFfset_InterpYaw;
+
+		if (FMath::Abs<float>(AimOffset_Yaw) < TurnInPlaceEndAngle)
+		{
+			TurnInPlaceType = ETurnInPlace::ETIP_NotTurning;
+			AimOffset_StartYaw = GetRemoveControlYaw();
+		}
+	}
+}
+
+float UIHPlayerFireComponent::GetRemoveControlYaw()
+{
+	if (!OwnerCharacter->IsLocallyControlled())
+	{
+		return FRotator::NormalizeAxis(OwnerCharacter->GetActorRotation().Yaw);
+	}
+
+	return OwnerCharacter->GetControlRotation().Yaw;
+}
+
+void UIHPlayerFireComponent::UpdtaeCrosshairSpread(float DeltaTime)
+{
+
+	APlayerController* playercontroller = Cast<APlayerController>(OwnerCharacter->GetController());
+
+	if (Weapon == nullptr)
+		return;
+
+	AIHHUD* HUD = Cast<AIHHUD>(playercontroller->GetHUD());
+	if(HUD == nullptr)
+		return;
+
+	//이동에 의한 
+	FVector2D WalkSpreadrange(0.0f, OwnerCharacter->GetCharacterMovement()->MaxWalkSpeed);
+	FVector2D VelocityMulRange(0.0f, 1.0f);
+	FVector Velocity = OwnerCharacter->GetVelocity();
+	Velocity.Z = 0;
+
+	float CrosshairVelocityAlpha = FMath::GetMappedRangeValueClamped(WalkSpreadrange, VelocityMulRange, Velocity.Size());
+
+	float CrosshairVelocityFactor = FMath::Lerp(Weapon->CrosshairSpreadMin, Weapon->CrosshairSpreadMAx, CrosshairVelocityAlpha);
+
+	TotalCrosshairFactor = CrosshairVelocityFactor + CrosshairFireFactor;
+
+	CrosshairFireFactor = FMath::FInterpTo(CrosshairFireFactor, 0, DeltaTime, 5.0f);
+
+	/////////////
+	HUD->SetCrosshairSpread(TotalCrosshairFactor);
+}
+
+FVector UIHPlayerFireComponent::GetRandomAimDirection()
+{
+	if (TotalCrosshairFactor > 0)
+	{
+		FVector RandomDirection =  FMath::VRandCone(CamComp->GetForwardVector(), FMath::DegreesToRadians(TotalCrosshairFactor) * 0.5);
+		return RandomDirection.GetSafeNormal();
+	}
+
+	return CamComp->GetForwardVector();
 }
 
 void UIHPlayerFireComponent::ThrowingAnimPlay_Multicast_Implementation()

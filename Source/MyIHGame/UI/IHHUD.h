@@ -16,9 +16,10 @@ class MYIHGAME_API AIHHUD : public AHUD
 	
 public:
 	virtual void DrawHUD() override;
+	float ComputeMaxScreenspaceSpreadRadius();
 
 private:
-	void DrawCrossHair(UTexture2D* Texture, FVector2D Position);
+	void DrawCrossHair(UTexture2D* Texture, FVector2D Position, FVector2D Spread);
 
 public:
 	// 가운데 중심점
@@ -34,4 +35,10 @@ public:
 	UTexture2D* CrosshairsTop;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* CrosshairsBottom;
+
+private:
+	float CrosshairSpread = 0;
+
+public:
+	FORCEINLINE void SetCrosshairSpread(float Spread) { CrosshairSpread = Spread; }
 };

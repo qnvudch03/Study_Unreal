@@ -6,6 +6,7 @@
 #include "../Character/TPS_Character.h"
 #include "../PlayerController/TPS_PlayerController.h"
 #include "../Enemy/TPS_Minion.h"
+#include "../UI/IHHUD.h"
 #include <Kismet/GameplayStatics.h>
 ATPS_GameMode::ATPS_GameMode()
 {
@@ -13,6 +14,8 @@ ATPS_GameMode::ATPS_GameMode()
 
 	PlayerStateClass = ATPS_PlayerState::StaticClass();
 	PlayerControllerClass = ATPS_PlayerController::StaticClass();
+
+	HUDClass = AIHHUD::StaticClass();
 
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprints/BP_Player"));
 

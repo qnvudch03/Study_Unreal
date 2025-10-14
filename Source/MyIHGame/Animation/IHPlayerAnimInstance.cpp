@@ -71,6 +71,8 @@ void UIHPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			// hand_r 공간으로 변환된 로테이션
 			LeftHandTransfrom.SetLocation(Position);
 			LeftHandTransfrom.SetRotation(FQuat(Rotator));
+
+			TurnInPlaceType = Player->FireComp->TurnInPlaceType;
 		}
 	}
 }
