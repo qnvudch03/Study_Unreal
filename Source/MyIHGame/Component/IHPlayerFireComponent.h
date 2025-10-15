@@ -85,6 +85,8 @@ public:
 	// ---------------- 입력 -----------------//
 	// 총알 발사 처리함수
 	void InputFire(const struct FInputActionValue& InputValue);
+	void LocalFire(FVector startPos, FVector randomDirection);
+
 	void CompleteInputFire(const struct FInputActionValue& InputValue);
 
 	FTimerHandle rifleAttackTimerHandler;
@@ -157,4 +159,13 @@ public:
 
 	float CrosshairFireFactor = 0;
 	FVector GetRandomAimDirection();
+
+	FHitResult CrosshirHitInfo;
+	void CheckCrosshairTarget();
+
+	UFUNCTION(Server, Reliable)
+	void InputFire_Server(FVector_NetQuantize10 startPos, FVector_NetQuantize10 randomDirection);
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void InputFire_Multicast(FVector_NetQuantize10 startPos, FVector_NetQuantize10 randomDirection);
 };

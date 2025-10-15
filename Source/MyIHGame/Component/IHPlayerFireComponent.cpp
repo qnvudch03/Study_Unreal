@@ -27,6 +27,16 @@
 #include "../Weapon/TPS_BaseWeaponProjectile.h"
 #include "../UI/IHHUD.h"
 
+namespace IHConsoleVariables
+{
+	static bool DrawCrosshairLine = false;
+	static FAutoConsoleVariableRef CVarDrawCrosshairLine(
+		TEXT("IH.DrawCrosshairLine"),
+		DrawCrosshairLine,
+		TEXT("debug drawing for crosshair line"),
+		ECVF_Default);
+}
+
 UIHPlayerFireComponent::UIHPlayerFireComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -72,6 +82,8 @@ void UIHPlayerFireComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 	if (OwnerCharacter->IsLocallyControlled())
 	{
+		CheckCrosshairTarget();
+
 		UpdtaeCrosshairSpread(DeltaTime);
 	}
 }
@@ -161,112 +173,18 @@ void UIHPlayerFireComponent::InputFire(const FInputActionValue& InputValue)
 	if (!canFire)
 		return;
 
-	GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(FireCameraShake);
-
-	UIHPlayerAnimInstance* AnimInstance = Cast<UIHPlayerAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance());
-	if (AnimInstance)
-	{
-		AnimInstance->PlayAttackAnim(OwnerCharacter->MoveComp->bIsRun);
-
-		APlayerController* playercontroller = Cast<APlayerController>(OwnerCharacter->GetController());
-
-		if (Weapon == nullptr)
-			return;
-
-		AIHHUD* HUD = Cast<AIHHUD>(playercontroller->GetHUD());
-		if (HUD == nullptr)
-			return;
-		CrosshairFireFactor = Weapon->CrosshairSpreadFire;
-
-
-	}
-
 	{
 		FVector StartPos = CamComp->GetComponentLocation();
-		FVector EndPos = CamComp->GetComponentLocation() + GetRandomAimDirection() * Weapon->MaxDistance;
-		FVector Dir = EndPos - StartPos;
-		Dir.Normalize();
 
-		// LineTrace 의 충돌 정보를 담을 변수
-		FHitResult HitInfo;
+		FVector RandomDir = GetRandomAimDirection();
 
-		//@TODO 여기. 이제 컴포넌트로 변경되었으니 부모의 Actor전달
-		FCollisionQueryParams Params;
-		Params.AddIgnoredActor(OwnerCharacter);	// 자기 자신(플레이어)는 충돌에서 제외
+		LocalFire(StartPos, RandomDir);
 
-		bool bHit = GetWorld()->LineTraceSingleByChannel(HitInfo, StartPos, EndPos,
-			ECC_TRACE_WEAPON /*ECC_Visibility*/, Params);
+		InputFire_Server(StartPos, RandomDir);
 
-		// 총기마다 사정거리 MaxDistance
-		// 충돌이 안되었으면 최대 사정거리까지만 총알이 날아간다.
-		if (bHit == false)
+		if (OwnerCharacter->IsLocallyControlled())
 		{
-			HitInfo.ImpactPoint = StartPos + Dir * Weapon->MaxDistance;
-		}
-
-		// 총알 궤적 파티클이 설정되어있으면
-		if (BeamParticelFactory)
-		{
-			// 무기 메시의 총구 위치를 가져온다.
-			FVector firePosition = Weapon->WeaponMesh->GetSocketTransform(TEXT("MuzzlePosition")).GetLocation();
-			UNiagaraComponent* BeamParticle = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, BeamParticelFactory, firePosition);
-			if (BeamParticle)
-			{
-				// 목표위치 지점을 설정
-				// 다이나믹 머티리얼 인스턴스 
-				UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector(
-					BeamParticle,
-					FName("ImpactPositions"),  // Niagara 변수 이름
-					TArray<FVector>({ HitInfo.ImpactPoint })  // ImpactPoint를 포함하는 배열
-				);
-
-				BeamParticle->SetVariableBool(FName(TEXT("Trigger")), true);
-			}
-		}
-
-		// LineTrace가 부딪혔을 때
-		if (bHit)
-		{
-			// 총알 파티클
-			FTransform bulletTrans;
-			bulletTrans.SetLocation(HitInfo.ImpactPoint);
-			//UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BulletEffectFactory, bulletTrans);
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, BulletEffectFactory, HitInfo.ImpactPoint);
-
-			// Hit 사운드
-			UGameplayStatics::PlaySoundAtLocation(this, HitSound, HitInfo.ImpactPoint);
-
-			// 탄흔 흔적 데칼 
-			UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(),
-				BulletDecalMaterial,	// 데칼 머티리얼 자체를 변수로
-				DecalSize,	// 사이즈는 원하는 데칼 크기
-				HitInfo.ImpactPoint,
-				HitInfo.ImpactNormal.Rotation(),
-				DecalLifetime);	// 탄흔이 몇초동안 유지되어야 하는지
-
-			Decal->SetFadeScreenSize(0); // 화면 크기에 따른 페이드 설정
-
-			auto HitComp = HitInfo.GetComponent();
-			// 충돌한 물체가 물리 적용되어 있다면
-			if (HitComp && HitComp->IsSimulatingPhysics())
-			{
-				FVector Force = Dir * HitComp->GetMass() * 500000;
-
-				// 충돌체크된 위치에 힘 전달
-				HitComp->AddForceAtLocation(Force, HitInfo.ImpactPoint);
-			}
-
-			// 충돌한 대상이 적인지 판단
-			UObject* Enemy = HitInfo.GetActor()->GetDefaultSubobjectByName(TEXT("FSM"));
-			//HitInfo.GetActor()->GetComponentByClass()
-			if (Enemy)
-			{
-				UIHEnemyFSM* FSM = Cast<UIHEnemyFSM>(Enemy);
-				if (FSM)
-				{
-					FSM->OnDamageProcess();
-				}
-			}
+			UE_LOG(LogTemp, Warning, TEXT("[Shotter Data]  Input Fire : [StartPos] %f  %f , [RandomDir] %f  %f "), StartPos.X, StartPos.Y, RandomDir.X, RandomDir.Y);
 		}
 	}
 
@@ -388,6 +306,71 @@ FVector UIHPlayerFireComponent::GetRandomAimDirection()
 	}
 
 	return CamComp->GetForwardVector();
+}
+
+void UIHPlayerFireComponent::CheckCrosshairTarget()
+{
+	APlayerController* PC = Cast<APlayerController>(OwnerCharacter->GetController());
+
+	if (PC == nullptr || Weapon == nullptr)
+		return;
+
+	AIHHUD* HUD = Cast<AIHHUD>(PC->GetHUD());
+	if (HUD == nullptr)
+		return;
+
+
+	FVector CamLoc;
+	FRotator CamRot;
+	PC->GetPlayerViewPoint(CamLoc, CamRot);
+
+	FVector AimDir = CamRot.Vector().GetSafeNormal();
+	FVector CameraEnd = CamLoc + (AimDir * Weapon->MaxDistance);
+
+	//FVector MuzzleFlashPosition = Weapon->WeaponMesh->GetSocketLocation("MuzzleFlash");
+	FVector Weaponloc = Weapon->GetMuzzleFlashLocation();
+
+
+	FVector Start = CameraEnd + ( (Weaponloc - CameraEnd).Dot(AimDir) * AimDir );
+	FVector End = Start + AimDir * Weapon->MaxDistance;
+
+	//@TODO 여기. 이제 컴포넌트로 변경되었으니 부모의 Actor전달
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(OwnerCharacter);	// 자기 자신(플레이어)는 충돌에서 제외
+	Params.AddIgnoredActor(Weapon);
+
+	bool bHit = GetWorld()->LineTraceSingleByChannel(CrosshirHitInfo, Start, End,
+		ECC_TRACE_WEAPON /*ECC_Visibility*/, Params);
+
+	if (IHConsoleVariables::DrawCrosshairLine)
+	{
+		DrawDebugLine(
+			GetWorld(),
+			Start,
+			End,
+			FColor::Red,
+			false,
+			1.0f,
+			0.0f,
+			0.5f);
+	}
+
+	if (bHit)
+	{
+		AActor* HitActor = CrosshirHitInfo.GetActor();
+
+		ACharacter* HittedCharacter =  Cast<ACharacter>(HitActor);
+
+		if (HittedCharacter)
+		{
+			HUD->SetCrosshairColor(FColor::Red);
+		}
+
+		else
+		{
+			HUD->SetCrosshairColor(FColor::White);
+		}
+	}
 }
 
 void UIHPlayerFireComponent::ThrowingAnimPlay_Multicast_Implementation()
@@ -517,5 +500,163 @@ void UIHPlayerFireComponent::CheckCameraVisible()
 		OwnerCharacter->GetMesh()->SetVisibility(true);
 		//OwnerCharacter->GetMesh()->SetOnlyOwnerSee(false);
 		Weapon->WeaponMesh->SetOwnerNoSee(false);
+	}
+}
+
+void UIHPlayerFireComponent::InputFire_Server_Implementation(FVector_NetQuantize10 startPos, FVector_NetQuantize10 randomDirection)
+{
+	InputFire_Multicast(startPos, randomDirection);
+}
+
+void UIHPlayerFireComponent::InputFire_Multicast_Implementation(FVector_NetQuantize10 startPos, FVector_NetQuantize10 randomDirection)
+{
+	if (OwnerCharacter && OwnerCharacter->IsLocallyControlled())// && !OwnerCharacter->HasAuthority())
+		return;
+
+	UE_LOG(LogTemp, Warning, TEXT("[Recieved Data]  Input Fire : [StartPos] %f  %f , [RandomDir] %f  %f "), startPos.X, startPos.Y, randomDirection.X, randomDirection.Y);
+
+	LocalFire(startPos, randomDirection);
+}
+
+void UIHPlayerFireComponent::LocalFire(FVector startPos, FVector randomDirection)
+{
+	if (OwnerCharacter->IsLocallyControlled())
+	{
+		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(FireCameraShake);
+	}
+	
+
+	UIHPlayerAnimInstance* AnimInstance = Cast<UIHPlayerAnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance());
+	if (AnimInstance)
+	{
+		AnimInstance->PlayAttackAnim(OwnerCharacter->MoveComp->bIsRun);
+
+		APlayerController* playercontroller = Cast<APlayerController>(OwnerCharacter->GetController());
+
+		CrosshairFireFactor = Weapon->CrosshairSpreadFire;
+
+
+	}
+
+	FVector EndPos = CamComp->GetComponentLocation() + randomDirection * Weapon->MaxDistance;
+
+	// LineTrace 의 충돌 정보를 담을 변수
+	FHitResult HitInfo;
+
+	//@TODO 여기. 이제 컴포넌트로 변경되었으니 부모의 Actor전달
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(OwnerCharacter);	// 자기 자신(플레이어)는 충돌에서 제외
+
+	bool bHit = GetWorld()->LineTraceSingleByChannel(HitInfo, startPos, EndPos,
+		ECC_TRACE_WEAPON /*ECC_Visibility*/, Params);
+
+	// 총기마다 사정거리 MaxDistance
+	// 충돌이 안되었으면 최대 사정거리까지만 총알이 날아간다.
+	if (bHit == false)
+	{
+		HitInfo.ImpactPoint = startPos + randomDirection * Weapon->MaxDistance;
+	}
+
+	// 총알 궤적 파티클이 설정되어있으면
+	if (BeamParticelFactory)
+	{
+		// 무기 메시의 총구 위치를 가져온다.
+		FVector firePosition = Weapon->WeaponMesh->GetSocketTransform(TEXT("MuzzlePosition")).GetLocation();
+		UNiagaraComponent* BeamParticle = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, BeamParticelFactory, firePosition);
+		if (BeamParticle)
+		{
+			// 목표위치 지점을 설정
+			// 다이나믹 머티리얼 인스턴스 
+			UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector(
+				BeamParticle,
+				FName("ImpactPositions"),  // Niagara 변수 이름
+				TArray<FVector>({ HitInfo.ImpactPoint })  // ImpactPoint를 포함하는 배열
+			);
+
+			BeamParticle->SetVariableBool(FName(TEXT("Trigger")), true);
+		}
+	}
+
+	// LineTrace가 부딪혔을 때
+	if (bHit)
+	{
+		// 총알 파티클
+		FTransform bulletTrans;
+		bulletTrans.SetLocation(HitInfo.ImpactPoint);
+		//UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BulletEffectFactory, bulletTrans);
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, BulletEffectFactory, HitInfo.ImpactPoint);
+
+		// Hit 사운드
+		UGameplayStatics::PlaySoundAtLocation(this, HitSound, HitInfo.ImpactPoint);
+
+		// 탄흔 흔적 데칼 
+		UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(),
+			BulletDecalMaterial,	// 데칼 머티리얼 자체를 변수로
+			DecalSize,	// 사이즈는 원하는 데칼 크기
+			HitInfo.ImpactPoint,
+			HitInfo.ImpactNormal.Rotation(),
+			DecalLifetime);	// 탄흔이 몇초동안 유지되어야 하는지
+
+		Decal->SetFadeScreenSize(0); // 화면 크기에 따른 페이드 설정
+
+		auto HitComp = HitInfo.GetComponent();
+		// 충돌한 물체가 물리 적용되어 있다면
+		if (HitComp && HitComp->IsSimulatingPhysics())
+		{
+			FVector Force = randomDirection * HitComp->GetMass() * 500000;
+
+			// 충돌체크된 위치에 힘 전달
+			HitComp->AddForceAtLocation(Force, HitInfo.ImpactPoint);
+		}
+
+		if (OwnerCharacter->HasAuthority())
+		{
+			bool bIsHeadShot = false;
+			if (ACharacter* HitCharacater = Cast<ACharacter>(HitInfo.GetActor()))
+			{
+				FHitResult BoneHitInfo;
+				FCollisionQueryParams BoneHitParams(SCENE_QUERY_STAT(ECC_TRACE_WEAPON));
+
+				if (HitCharacater->GetMesh()->LineTraceComponent(BoneHitInfo, startPos, EndPos, BoneHitParams))
+				{
+					bIsHeadShot = BoneHitInfo.BoneName.ToString().Contains(TEXT("head"));
+				}
+			}
+
+			float TotalDamage = Weapon->damage * OwnerCharacter->GetCharacterStat()->DamageMultiplier;
+
+			if (bIsHeadShot)
+			{
+				TotalDamage = 100;
+			}
+
+			UGameplayStatics::ApplyPointDamage(
+				HitInfo.GetActor(),
+				TotalDamage,
+				randomDirection,
+				HitInfo,
+				OwnerCharacter->GetController(),
+				OwnerCharacter,
+				UDamageType::StaticClass()
+			);
+
+			// 충돌한 대상이 적인지 판단
+			if (OwnerCharacter->HasAuthority())
+			{
+				UObject* Enemy = HitInfo.GetActor()->GetDefaultSubobjectByName(TEXT("FSM"));
+				//HitInfo.GetActor()->GetComponentByClass()
+				if (Enemy)
+				{
+					UIHEnemyFSM* FSM = Cast<UIHEnemyFSM>(Enemy);
+					if (FSM)
+					{
+						FSM->OnDamageProcess();
+					}
+				}
+			}
+		}
+
+		
+		
 	}
 }

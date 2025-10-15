@@ -23,6 +23,7 @@
 #include "../Interface/TPS_Interactable.h"
 #include "../Test/IHColorBox.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "../Component/HealthComponent.h"
 #include <Components/PawnNoiseEmitterComponent.h>
 
 
@@ -69,9 +70,12 @@ AIHPlayer::AIHPlayer()
 
 	MoveComp = CreateDefaultSubobject<UIHPlayerMoveComponent>(TEXT("MoveComp"));
 	FireComp = CreateDefaultSubobject<UIHPlayerFireComponent>(TEXT("FireComp"));
+	healthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
 
 	NoiseEmitter = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("NoiseEmitter"));
 	NoiseEmitter->NoiseLifetime = 0.01f;
+
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
 void AIHPlayer::Interact_Server_Implementation()
@@ -121,8 +125,6 @@ void AIHPlayer::BeginPlay()
 			SubSystem->AddMappingContext(InputData->IMC_TPS, 0);
 		}
 	}
-
-	Hp = InitialHp;
 
 	UpdateCharacterStat(1);
 }
@@ -195,7 +197,7 @@ void AIHPlayer::Tick(float DeltaTime)
 		SphereRadius, 
 		UEngineTypes::ConvertToTraceType(ECC_WorldStatic), 
 		false, IgnoreList,
-		EDrawDebugTrace::ForOneFrame, 
+		EDrawDebugTrace::None, 
 		HitResult, true
 	);
 
@@ -303,13 +305,13 @@ void AIHPlayer::UpdateCharacterStat(int32 CharacterLevel)
 
 void AIHPlayer::OnHitEvent()
 {
-	PRINT_LOG(TEXT("Damaged !!!!!"));
+	/*PRINT_LOG(TEXT("Damaged !!!!!"));
 	Hp--;
 	if (Hp <= 0)
 	{
 		PRINT_LOG(TEXT("Player is dead!"));
 		OnGameOver();
-	}
+	}*/
 }
 
 void AIHPlayer::OnGameOver_Implementation()

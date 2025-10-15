@@ -93,13 +93,15 @@ public:
 	class UIHPlayerMoveComponent* MoveComp;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "IHGame")
 	class UIHPlayerFireComponent* FireComp;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "MY|HealthComponent")
+	class UHealthComponent* healthComp;
 
-	// 현재 체력
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "IHGame|Value")
-	int32 Hp;
-	// 초기 hp 값
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "IHGame|Value")
-	int32 InitialHp = 10;
+	//// 현재 체력
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "IHGame|Value")
+	//int32 Hp;
+	//// 초기 hp 값
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "IHGame|Value")
+	//int32 InitialHp = 10;
 
 	// 피격 당했을 때 처리
 	UFUNCTION(BlueprintCallable, Category = "IHGame")

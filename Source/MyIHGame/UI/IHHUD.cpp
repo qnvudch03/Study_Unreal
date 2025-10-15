@@ -88,7 +88,7 @@ void AIHHUD::DrawCrossHair(UTexture2D* Texture, FVector2D Position, FVector2D Sp
 		0.f,
 		1.f,
 		1.f,
-		FColor::White
+		CrosshairColor
 	);
 }
 

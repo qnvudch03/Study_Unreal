@@ -39,6 +39,9 @@ public:
 private:
 	float CrosshairSpread = 0;
 
+	FColor CrosshairColor = FColor::White;
+
 public:
 	FORCEINLINE void SetCrosshairSpread(float Spread) { CrosshairSpread = Spread; }
+	FORCEINLINE void SetCrosshairColor(FColor newColor) { CrosshairColor = newColor; }
 };

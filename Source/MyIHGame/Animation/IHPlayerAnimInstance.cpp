@@ -28,13 +28,13 @@ void UIHPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		if (Player->HasAuthority() && Player->GetRemoteRole() == ENetRole::ROLE_AutonomousProxy)
 		{
 			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Authority Speed : %f"), Speed));
-			PRINT_LOG(TEXT("Authority Speed : %f"),Speed);
+			//PRINT_LOG(TEXT("Authority Speed : %f"),Speed);
 		}
 
 		else if (!Player->HasAuthority() && Player->GetLocalRole() == ENetRole::ROLE_AutonomousProxy)
 		{
 			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Client Speed : %f"), Speed));
-			PRINT_LOG(TEXT("Client Speed : %f"), Speed);
+			//PRINT_LOG(TEXT("Client Speed : %f"), Speed);
 		}
 
 		// 가고자 하는 방향 Velocity는 월드 기준.

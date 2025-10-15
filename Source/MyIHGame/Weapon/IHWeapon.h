@@ -47,4 +47,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|FPS")
 	float AttackSpeed = 20;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|FPS")
+	float damage = 10;
+
+	FVector GetMuzzleFlashLocation();
 };

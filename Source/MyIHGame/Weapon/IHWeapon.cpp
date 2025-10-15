@@ -38,3 +38,18 @@ void AIHWeapon::Tick(float DeltaTime)
 
 }
 
+FVector AIHWeapon::GetMuzzleFlashLocation()
+{
+	if (WeaponMesh)
+	{
+		FVector MuzzleFlashLocation =  WeaponMesh->GetSocketLocation("MuzzleFlash");
+		return MuzzleFlashLocation;
+	}
+
+	else
+	{
+		return FVector::Zero();
+	}
+	
+}
+
