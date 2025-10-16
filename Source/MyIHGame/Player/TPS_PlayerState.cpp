@@ -33,6 +33,8 @@ void ATPS_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	//DOREPLIFETIME(ATPS_PlayerState, Xp);
 	DOREPLIFETIME_CONDITION(ATPS_PlayerState, Xp, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(ATPS_PlayerState, Lv, COND_OwnerOnly);
+
+	DOREPLIFETIME(ATPS_PlayerState, SkinIndex);
 }
 
 void ATPS_PlayerState::OnRep_Xp()

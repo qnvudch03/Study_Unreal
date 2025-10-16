@@ -59,6 +59,11 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+public:
+	/** Called on both the clientand server when ever SetPlayerState is called on this pawn. */
+	virtual void OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState) override;
+	void ApplyCharacterSkin();
+
 
 public:	
 	// Called every frame
@@ -114,6 +119,9 @@ public:
 	// 총 바꿀 때 호출되는 이벤트 함수
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = Health)
 	void OnUsingGrenade(bool isGrenade);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = Health)
+	void OnPlayDeathEffec();
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|Character Data", meta = (AllowPrivateAccess = "true"))

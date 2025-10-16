@@ -22,6 +22,8 @@ AIHWeapon::AIHWeapon()
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	WeaponMesh->SetupAttachment(CollisionComp);
+
+	bReplicates = true;
 }
 
 // Called when the game starts or when spawned
@@ -36,6 +38,14 @@ void AIHWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AIHWeapon::PlayFireAnimation()
+{
+	if (weaponFireAnimation)
+	{
+		WeaponMesh->PlayAnimation(weaponFireAnimation, false);
+	}
 }
 
 FVector AIHWeapon::GetMuzzleFlashLocation()

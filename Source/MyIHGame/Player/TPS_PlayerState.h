@@ -23,6 +23,9 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
+	UPROPERTY(Replicated)
+	int32 SkinIndex = -1;
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Character_XP", ReplicatedUsing = "OnRep_Xp")
 	int Xp = 0;
@@ -41,5 +44,7 @@ protected:
 
 	UPROPERTY(BlueprintAssignable, Category = "Event")
 	FOnLvChagned OnLvChagned;
+
+
 	
 };

@@ -85,6 +85,16 @@ void UIHPlayerAnimInstance::PlayAttackAnim(bool bIsRun)
 	Montage_JumpToSection(SectionName, AttackAnimMontage);
 }
 
+void UIHPlayerAnimInstance::PlayDeathAnim()
+{
+	int randInt = FMath::RandRange(0, 1);
+
+	FName SectionName = (randInt == 0) ? TEXT("Death_A") : TEXT("Death_B");
+
+	Montage_Play(DeathAnimMontage);
+	Montage_JumpToSection(SectionName, AttackAnimMontage);
+}
+
 void UIHPlayerAnimInstance::PlayDrawingAnim()
 {
 	Montage_Play(DrawWeaponAnimMontage);

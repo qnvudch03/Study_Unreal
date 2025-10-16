@@ -27,4 +27,7 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UDataTable> CharacterDataTable;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<class USkeletalMesh*> SkinAssetList;
 };

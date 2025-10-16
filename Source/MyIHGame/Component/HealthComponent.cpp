@@ -5,6 +5,7 @@
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
 #include "NiagaraDataInterface.h"
 #include "../Character/IHPlayer.h"
+#include "../Animation/IHPlayerAnimInstance.h"
 
 #include "Component/HealthComponent.h"
 
@@ -56,18 +57,42 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UHealthComponent, currentHP);
+	DOREPLIFETIME(UHealthComponent, BeDamagedActor);
 }
 
 #include <Engine/StreamableManager.h>
 #include <Engine/AssetManager.h>
 void UHealthComponent::Multicast_ChangeCurrentHP_Implementation(float Damage, AActor* hittedactor, AController* InstigatedBy, FVector_NetQuantize HitLocation)
 {
-	auto test0 = GetOwner()->GetLocalRole();
-	auto test1 = GetOwner();
-	auto test2 = OwningCharacter;
-	auto test3 = OwningCharacter->GetController();
+	ACharacter* character = Cast<ACharacter>(GetOwner());
+	if (ACharacter* HitCharacter = Cast<ACharacter>(GetOwner()))
+	if(GetOwner())
+	{
+		for (int32 i = 0; i < HitCharacter->GetMesh()->GetMaterials().Num(); i++)
+		{
+			UMaterialInstanceDynamic* DynamicMaterial = HitCharacter->GetMesh()->CreateDynamicMaterialInstance(i);
 
-	if (true) //(GetOwner() == hittedactor))
+			if (DynamicMaterial)
+			{
+				DynamicMaterial->SetScalarParameterValue(FName("HitFxSwitch"), 1.0f);
+				DynamicMaterial->SetVectorParameterValue(FName("HitEmissiveColor"), FVector(0, 0, 1));
+			}
+		}
+		GetWorld()->GetTimerManager().ClearTimer(HitFXTimerHander);
+		GetWorld()->GetTimerManager().SetTimer(HitFXTimerHander, this, &UHealthComponent::ResetHitFxTimer, 0.5);
+	}
+
+	{
+		auto test0 = GetOwner()->GetLocalRole();
+		auto test1 = GetOwner();
+		auto test2 = OwningCharacter;
+		auto test3 = OwningCharacter->GetController();
+	}
+
+
+
+
+	if (GetOwner() == hittedactor) //(GetOwner() == hittedactor))
 	{
 		if (damageFloaterEffect2.IsValid())
 		{
@@ -91,20 +116,20 @@ void UHealthComponent::Multicast_ChangeCurrentHP_Implementation(float Damage, AA
 
 		}
 	}
-
-
-	
-
-
-	
-
 	//currentHP = FMath::Clamp(currentHP - Damage, 0, maxHP);
 }
 
 void UHealthComponent::TakePointDamage(AActor* DamagedActor, float Damage, AController* InstigatedBy, FVector HitLocation, UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, const UDamageType* DamageType, AActor* DamageCauser)
 {
 	if (currentHP <= 0)
-		return;
+	{
+		GetOwner()->OnTakePointDamage.RemoveDynamic(this, &UHealthComponent::TakePointDamage);
+
+		FTimerHandle RespawnTimerHandle;
+
+		Multicast_death();
+		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, this, &UHealthComponent::DeathTimerExpire, deathDelayTime, false);
+	}
 
 	currentHP = FMath::Clamp(currentHP - Damage, 0, maxHP);
 
@@ -131,5 +156,49 @@ void UHealthComponent::PlayDamageEffect(float Damage, FVector HitLocation)
 		FName("DamageInfo"),
 		VectorArray
 	);
+}
+
+void UHealthComponent::Multicast_death_Implementation()
+{
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	if (Character)
+	{
+		UIHPlayerAnimInstance* animInstance = Cast<UIHPlayerAnimInstance>(Character->GetMesh()->GetAnimInstance());
+
+		animInstance->PlayDeathAnim();
+	}
+
+	AIHPlayer* Player = Cast<AIHPlayer>(Character);
+	if (Player)
+	{
+		Player->OnPlayDeathEffec();
+	}
+}
+
+void UHealthComponent::DeathTimerExpire()
+{
+	ATPS_GameMode* GameMode = Cast<ATPS_GameMode>(GetWorld()->GetAuthGameMode());
+	if (GameMode)
+	{
+		GameMode->PlayerRespawn(Cast<ACharacter>(GetOwner()));
+	}
+
+	return;
+}
+
+void UHealthComponent::ResetHitFxTimer()
+{
+	if (ACharacter* HitCharacter = Cast<ACharacter>(GetOwner()))
+	{
+		for (int32 i = 0; i < HitCharacter->GetMesh()->GetMaterials().Num(); i++)
+		{
+			UMaterialInstanceDynamic* DynamicMaterial = HitCharacter->GetMesh()->CreateDynamicMaterialInstance(i);
+
+			if (DynamicMaterial)
+			{
+				DynamicMaterial->SetScalarParameterValue(FName("HitFxSwitch"), 0.f);
+			}
+		}
+	}
 }
 

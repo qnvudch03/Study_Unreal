@@ -51,5 +51,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|FPS")
 	float damage = 10;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|FireAnimation")
+	TObjectPtr<UAnimationAsset> weaponFireAnimation;
+
+	void PlayFireAnimation();
+
 	FVector GetMuzzleFlashLocation();
 };

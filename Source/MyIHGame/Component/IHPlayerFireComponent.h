@@ -51,6 +51,8 @@ public:
 	//UPROPERTY(EditAnywhere, Category = "IHGame|Weapon")
 	//class UParticleSystem* BulletEffectFactory;
 
+
+
 	// Actor를 상속받아서 생성한 BP 타입 연결 테스트용.
 	UPROPERTY(EditDefaultsOnly, Category = "IHGame|Weapon")
 	TSubclassOf<class UCameraShakeBase> FireCameraShake;
@@ -60,8 +62,10 @@ public:
 	TSubclassOf<class AIHWeapon> StartWeapon; // BP_Rifle이다.
 
 	// 진짜 스폰된 무기를 저장할 변수
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	AIHWeapon* Weapon;	// 현재 들고있는 무기
+
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 	// 에임 오프셋 관련 변수
 	float AimOffset_Yaw = 0;

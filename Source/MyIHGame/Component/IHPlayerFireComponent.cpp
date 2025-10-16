@@ -25,6 +25,7 @@
 #include "Data/IHInputDataAsset.h"
 #include "IHGameplayTags.h"
 #include "../Weapon/TPS_BaseWeaponProjectile.h"
+#include <Net/UnrealNetwork.h>
 #include "../UI/IHHUD.h"
 
 namespace IHConsoleVariables
@@ -51,19 +52,21 @@ void UIHPlayerFireComponent::BeginPlay()
 
 	CamComp = OwnerCharacter->CamComp;
 
-	// 스타팅 무기를 월드에 진짜로 스폰시킨다.
-	if (StartWeapon)	// 무기를 블루프린트에서 지정했다면
+	if (GetOwner()->HasAuthority())
 	{
-		//월드에 스폰시켜서 Weapon 이라는 변수에 저장한다.
-		Weapon = GetWorld()->SpawnActor<AIHWeapon>(StartWeapon);
-		Weapon->SetOwner(OwnerCharacter);
-
-		// 무기가 캐릭터 오른손을 따라다니게 설정한다.
-		// 여러분은 hand_rSocket
-		const USkeletalMeshSocket* HandSocket = OwnerCharacter->GetMesh()->GetSocketByName(FName("hand_r_socket"));
-		if (HandSocket)
+		if (StartWeapon)	// 무기를 블루프린트에서 지정했다면
 		{
-			HandSocket->AttachActor(Weapon, OwnerCharacter->GetMesh());
+			//월드에 스폰시켜서 Weapon 이라는 변수에 저장한다.
+			Weapon = GetWorld()->SpawnActor<AIHWeapon>(StartWeapon);
+			Weapon->SetOwner(OwnerCharacter);
+
+			// 무기가 캐릭터 오른손을 따라다니게 설정한다.
+			// 여러분은 hand_rSocket
+			const USkeletalMeshSocket* HandSocket = OwnerCharacter->GetMesh()->GetSocketByName(FName("hand_r_socket"));
+			if (HandSocket)
+			{
+				HandSocket->AttachActor(Weapon, OwnerCharacter->GetMesh());
+			}
 		}
 	}
 
@@ -190,7 +193,12 @@ void UIHPlayerFireComponent::InputFire(const FInputActionValue& InputValue)
 
 	canFire = false;
 
-	GetWorld()->GetTimerManager().SetTimer(rifleAttackTimerHandler, FTimerDelegate::CreateLambda([this]() {canFire = true; }), 1 / Weapon->AttackSpeed, false);
+	if (Weapon)
+	{
+		GetWorld()->GetTimerManager().SetTimer(rifleAttackTimerHandler, FTimerDelegate::CreateLambda([this]() {canFire = true; }), 1 / Weapon->AttackSpeed, false);
+	}
+
+	
 }
 
 void UIHPlayerFireComponent::CompleteInputFire(const FInputActionValue& InputValue)
@@ -476,6 +484,11 @@ void UIHPlayerFireComponent::SpawnThrowing_Implementation()
 //	}
 //}
 
+void UIHPlayerFireComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	DOREPLIFETIME(UIHPlayerFireComponent, Weapon);
+}
+
 void UIHPlayerFireComponent::CheckCameraVisible()
 {
 	// 카메라와 캐릭터가 너무 가까우면, 캐릭터 메시를 숨김
@@ -492,14 +505,26 @@ void UIHPlayerFireComponent::CheckCameraVisible()
 		OwnerCharacter->GetMesh()->SetVisibility(false);
 		//OwnerCharacter->GetMesh()->SetVisibility(false);
 		//OwnerCharacter->GetMesh()->SetOnlyOwnerSee(true);
-		Weapon->WeaponMesh->SetOwnerNoSee(true);
+
+		if (Weapon)
+		{
+			Weapon->WeaponMesh->SetOwnerNoSee(true);
+		}
+
+		
 	}
 
 	else
 	{
 		OwnerCharacter->GetMesh()->SetVisibility(true);
 		//OwnerCharacter->GetMesh()->SetOnlyOwnerSee(false);
-		Weapon->WeaponMesh->SetOwnerNoSee(false);
+
+		if (Weapon)
+		{
+			Weapon->WeaponMesh->SetOwnerNoSee(false);
+		}
+
+		
 	}
 }
 
@@ -520,6 +545,9 @@ void UIHPlayerFireComponent::InputFire_Multicast_Implementation(FVector_NetQuant
 
 void UIHPlayerFireComponent::LocalFire(FVector startPos, FVector randomDirection)
 {
+	if (Weapon == nullptr)
+		return;
+
 	if (OwnerCharacter->IsLocallyControlled())
 	{
 		GetWorld()->GetFirstPlayerController()->PlayerCameraManager->StartCameraShake(FireCameraShake);
@@ -534,8 +562,11 @@ void UIHPlayerFireComponent::LocalFire(FVector startPos, FVector randomDirection
 		APlayerController* playercontroller = Cast<APlayerController>(OwnerCharacter->GetController());
 
 		CrosshairFireFactor = Weapon->CrosshairSpreadFire;
+	}
 
-
+	if (Weapon)
+	{
+		Weapon->PlayFireAnimation();
 	}
 
 	FVector EndPos = CamComp->GetComponentLocation() + randomDirection * Weapon->MaxDistance;

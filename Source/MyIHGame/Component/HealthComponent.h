@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include <Net/UnrealNetwork.h>
+#include "../Game/TPS_GameMode.h"
 #include "HealthComponent.generated.h"
 
 
@@ -32,13 +33,15 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Value")
 	int32 maxHP = 100;
 
+
+
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_ChangeCurrentHP(float Damage, AActor* hittedactor, class AController* InstigatedBy, FVector_NetQuantize HitLocation);
 
 	UFUNCTION()
 	void TakePointDamage(AActor* DamagedActor, float Damage, class AController* InstigatedBy, FVector HitLocation, class UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, const class UDamageType* DamageType, AActor* DamageCauser);
 
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	class AController* ShootInstigater;
 
 	UPROPERTY(Replicated)
@@ -54,5 +57,21 @@ public:
 
 	UPROPERTY()
 	TObjectPtr<class AIHPlayer> OwningCharacter;
+
+	//ªÁ∏¡√≥∏Æ
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_death();
+
+	void DeathTimerExpire();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|Value")
+	float deathDelayTime = 2.0f;
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "OnPlayDeathEffect")
+	void OnPlayDeathEffect();
+
+private:
+	FTimerHandle HitFXTimerHander;
+	void ResetHitFxTimer();
 
 };

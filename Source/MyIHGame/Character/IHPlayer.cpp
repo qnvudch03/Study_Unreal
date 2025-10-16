@@ -24,6 +24,7 @@
 #include "../Test/IHColorBox.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "../Component/HealthComponent.h"
+#include "../Player/TPS_PlayerState.h"
 #include <Components/PawnNoiseEmitterComponent.h>
 
 
@@ -93,7 +94,7 @@ void AIHPlayer::Interact_Server_Implementation()
 
 void AIHPlayer::GetColorBox(AIHColorBox* PickedBox)
 {
-
+	
 }
 
 // Called when the game starts or when spawned
@@ -127,6 +128,32 @@ void AIHPlayer::BeginPlay()
 	}
 
 	UpdateCharacterStat(1);
+}
+
+void AIHPlayer::OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState)
+{
+	Super::OnPlayerStateChanged(NewPlayerState, OldPlayerState);
+
+	ApplyCharacterSkin();
+}
+
+void AIHPlayer::ApplyCharacterSkin()
+{
+	ATPS_PlayerState* IHPlayerState = GetPlayerState< ATPS_PlayerState>();
+
+	if (IHPlayerState == nullptr)
+		return;
+
+	if (GetMesh())
+	{
+		UIHDataSubsystem* dataSystem = GetWorld()->GetGameInstance()->GetSubsystem<UIHDataSubsystem>();
+
+		if (dataSystem != nullptr && IHPlayerState->SkinIndex != -1)
+		{
+			GetMesh()->SetSkeletalMesh(dataSystem->SkinAssetList[IHPlayerState->SkinIndex]);
+		}
+		
+	}
 }
 
 void AIHPlayer::SprintStart_Server_Implementation()

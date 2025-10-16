@@ -57,6 +57,11 @@ public:
 	// 공격 애니메이션 재생 함수
 	void PlayAttackAnim(bool bIsRun);
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|DeathAnimMontage")
+	class UAnimMontage* DeathAnimMontage;
+
+	void PlayDeathAnim();
+
 	void PlayDrawingAnim();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "IHGame|Value")
