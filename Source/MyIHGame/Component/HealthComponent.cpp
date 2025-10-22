@@ -1,5 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+#include "Component/HealthComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
@@ -8,7 +9,7 @@
 #include "../Animation/IHPlayerAnimInstance.h"
 #include "../Enemy/TPS_Minion.h"
 
-#include "Component/HealthComponent.h"
+
 
 // Sets default values for this component's properties
 UHealthComponent::UHealthComponent()
@@ -40,6 +41,7 @@ void UHealthComponent::BeginPlay()
 	if (GetOwner()->HasAuthority())
 	{
 		GetOwner()->OnTakePointDamage.AddDynamic(this, &UHealthComponent::TakePointDamage);
+		GetOwner()->OnTakeAnyDamage.AddDynamic(this, &UHealthComponent::TakeAnyDamage);
 	}
 
 	OwningCharacter = Cast<AIHPlayer>(GetOwner());
@@ -142,6 +144,21 @@ void UHealthComponent::TakePointDamage(AActor* DamagedActor, float Damage, ACont
 	BeDamagedActor = DamagedActor;
 
 	Multicast_ChangeCurrentHP(Damage, BeDamagedActor, ShootInstigater, HitLocation);
+}
+
+void UHealthComponent::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
+{
+	if (currentHP <= 0)
+		return;
+
+	currentHP = FMath::Clamp(currentHP - Damage, 0, maxHP);
+
+	Multicast_ChangeCurrentHP(Damage, BeDamagedActor, ShootInstigater, DamagedActor->GetActorLocation());
+
+	if (currentHP <= 0)
+	{
+		Multicast_death(DamageCauser);
+	}
 }
 
 void UHealthComponent::PlayDamageEffect(float Damage, FVector HitLocation)

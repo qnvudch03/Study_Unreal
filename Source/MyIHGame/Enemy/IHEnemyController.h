@@ -33,5 +33,14 @@ public:
 	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 
 	void PostInitializeComponents() override;
+
+	UPROPERTY(EditAnywhere, Category = "MY|Value")
+	FName BBKey_bCanSeePlayer;
+
+	UPROPERTY(EditAnywhere, Category = "MY|Value")
+	FName BBKey_Player;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MY|Attack Anim Montage")
+	class UAnimMontage* AttackAnimMontage;
 	
 };

@@ -630,15 +630,15 @@ void UIHPlayerFireComponent::LocalFire(FVector startPos, FVector randomDirection
 
 		Decal->SetFadeScreenSize(0); // 화면 크기에 따른 페이드 설정
 
-		auto HitComp = HitInfo.GetComponent();
-		// 충돌한 물체가 물리 적용되어 있다면
-		if (HitComp && HitComp->IsSimulatingPhysics())
-		{
-			FVector Force = randomDirection * HitComp->GetMass() * 500000;
+		//auto HitComp = HitInfo.GetComponent();
+		//// 충돌한 물체가 물리 적용되어 있다면
+		//if (HitComp && HitComp->IsSimulatingPhysics())
+		//{
+		//	FVector Force = randomDirection * HitComp->GetMass() * 500000;
 
-			// 충돌체크된 위치에 힘 전달
-			HitComp->AddForceAtLocation(Force, HitInfo.ImpactPoint);
-		}
+		//	// 충돌체크된 위치에 힘 전달
+		//	HitComp->AddForceAtLocation(Force, HitInfo.ImpactPoint);
+		//}
 
 		if (OwnerCharacter->HasAuthority())
 		{

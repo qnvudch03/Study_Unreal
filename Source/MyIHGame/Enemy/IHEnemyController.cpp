@@ -8,6 +8,8 @@
 #include <Perception/AISenseConfig_Sight.h>
 #include <Perception/AISense_Sight.h>
 #include <Perception/AISense_Hearing.h>
+#include <BehaviorTree/BlackboardComponent.h>
+#include "../Character/IHPlayer.h"
 #include "IHPatrolPoint.h"
 
 AIHEnemyController::AIHEnemyController()
@@ -69,5 +71,24 @@ void AIHEnemyController::PostInitializeComponents()
 
 void AIHEnemyController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
+	UBlackboardComponent* blackBoardComp = GetBlackboardComponent();
 
+	if (blackBoardComp == nullptr)
+		return;
+
+	AIHPlayer* TargetPlayer = Cast<AIHPlayer>(Actor);
+
+	if (Stimulus.WasSuccessfullySensed())
+	{
+		if (TargetPlayer)
+		{
+			blackBoardComp->SetValueAsBool(BBKey_bCanSeePlayer, true);
+			blackBoardComp->SetValueAsObject(BBKey_Player, TargetPlayer);
+
+			return;
+		}
+	}
+
+	/*blackBoardComp->SetValueAsBool(BBKey_bCanSeePlayer, false);
+	blackBoardComp->SetValueAsObject(BBKey_Player, NULL);*/
 }

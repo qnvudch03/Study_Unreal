@@ -24,6 +24,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "MY|Value")
 	float PatrolRadius = 1500;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "MY|Value")
+	float ChaseSpeed = 500;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -38,5 +41,39 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void UpdateWalkSpeed(float Speed);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MY|BossAtkMontage")
+	TObjectPtr<class UAnimMontage> attackMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MY|BossDeathMontage")
+	TObjectPtr<class UAnimMontage> deathMontage;
+
+public:
+	//Attack
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MY|LeftHand")
+	TObjectPtr<class USphereComponent> leftHandCollider;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MY|LeftHand")
+	TObjectPtr<class USphereComponent> rightHandCollider;
+
+	UFUNCTION()
+	void OnOverlapLeftHandCollision(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnOverlapRightHandCollision(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION(BlueprintCallable)
+	void SetHandColliderActive();
+
+	UFUNCTION(BlueprintCallable)
+	void SetHandColliderDeActive();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "MY|Value")
+	float damage = 15;
+
+	void onDeathEvent(AActor* DameCauser);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = Health)
+	void OnPlayDeathEffec();
 
 };
