@@ -128,6 +128,12 @@ void AIHPlayer::BeginPlay()
 	}
 
 	UpdateCharacterStat(1);
+
+	if (healthComp)
+	{
+		//healthComp->OnDeathEventDelegate.AddDynamic(this, &AIHPlayer::OnDeathEvent);
+		healthComp->OnDeathEventDelegate.AddUObject(this, &AIHPlayer::OnDeathEvent);
+	}
 }
 
 void AIHPlayer::OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState)
@@ -339,6 +345,39 @@ void AIHPlayer::OnHitEvent()
 		PRINT_LOG(TEXT("Player is dead!"));
 		OnGameOver();
 	}*/
+}
+
+void AIHPlayer::OnDeathEvent(AActor* DamageCauser)
+{
+	UIHPlayerAnimInstance* AnimInstace = Cast< UIHPlayerAnimInstance>(GetMesh()->GetAnimInstance());
+	if (AnimInstace)
+	{
+		AnimInstace->PlayDeathAnim();
+	}
+
+	if (HasAuthority())
+	{
+		FTimerHandle RespawnTimerHandle;
+
+
+		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, this, &AIHPlayer::PlayerDeathTimerExpire, deathDelayTime, false);
+	}
+
+	
+	
+
+}
+
+void AIHPlayer::PlayerDeathTimerExpire()
+{
+	ATPS_GameMode* GameMode = Cast<ATPS_GameMode>(GetWorld()->GetAuthGameMode());
+	if (GameMode)
+	{
+		//GameMode->PlayerRespawn(Cast<ACharacter>(GetOwner()));
+		GameMode->PlayerRespawn(Cast<ACharacter>(this));
+	}
+
+	return;
 }
 
 void AIHPlayer::OnGameOver_Implementation()

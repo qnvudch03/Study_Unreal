@@ -91,8 +91,14 @@ void UIHPlayerAnimInstance::PlayDeathAnim()
 
 	FName SectionName = (randInt == 0) ? TEXT("Death_A") : TEXT("Death_B");
 
-	Montage_Play(DeathAnimMontage);
-	Montage_JumpToSection(SectionName, AttackAnimMontage);
+	if (DeathAnimMontage)
+	{
+		Montage_Play(DeathAnimMontage);
+		Montage_JumpToSection(SectionName, AttackAnimMontage);
+	}
+
+	
+	
 }
 
 void UIHPlayerAnimInstance::PlayDrawingAnim()

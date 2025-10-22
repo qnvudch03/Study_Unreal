@@ -4,28 +4,39 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "TPS_Character.generated.h"
+#include "IHBoss.generated.h"
 
 UCLASS()
-class MYIHGAME_API ATPS_Character : public ACharacter
+class MYIHGAME_API AIHBoss : public ACharacter
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
-	ATPS_Character();
+	AIHBoss();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "MY|HealthComponent")
+	class UHealthComponent* healthComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "MY|Value")
+	float PatrolSpeed = 100;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "MY|Value")
+	float PatrolRadius = 1500;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:
+public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	//void OnDeathEvent();
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateWalkSpeed(float Speed);
 
 };

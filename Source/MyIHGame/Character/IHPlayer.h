@@ -136,4 +136,10 @@ private:
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MY|Stealth", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPawnNoiseEmitterComponent> NoiseEmitter;
+
+	UFUNCTION()
+	void OnDeathEvent(AActor* DamageCauser);
+	float deathDelayTime = 2.0f;
+
+	void PlayerDeathTimerExpire();
 };

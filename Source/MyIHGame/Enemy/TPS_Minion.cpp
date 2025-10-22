@@ -13,6 +13,13 @@
 #include <Components/SphereComponent.h>
 #include "../Game/TPS_GameMode.h"
 #include "../Item/TPS_BasePickup.h"
+#include "../Component/HealthComponent.h"
+#include <Perception/AIPerceptionComponent.h>
+#include <Perception/AISenseConfig_Hearing.h>
+#include <Perception/AISenseConfig_Sight.h>
+#include <Perception/AISense_Sight.h>
+#include <Perception/AISense_Hearing.h>
+#include "IHEnemyController.h"
 
 // Sets default values
 ATPS_Minion::ATPS_Minion()
@@ -27,12 +34,33 @@ ATPS_Minion::ATPS_Minion()
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	AIControllerClass = AAIController::StaticClass();
 
-	PawnSense = CreateDefaultSubobject<UPawnSensingComponent>(TEXT("PawnSense"));
+	/*PawnSense = CreateDefaultSubobject<UPawnSensingComponent>(TEXT("PawnSense"));
 	PawnSense->SensingInterval = 0.8f;
 	PawnSense->SetPeripheralVisionAngle(45.0f);
 	PawnSense->SightRadius = 1500.0f;
 	PawnSense->HearingThreshold = 400.0f;
-	PawnSense->LOSHearingThreshold = 800.0f;
+	PawnSense->LOSHearingThreshold = 800.0f;*/
+
+	PawnSense = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("PawnSense"));
+
+	UAISenseConfig_Sight* SightConfig = CreateDefaultSubobject< UAISenseConfig_Sight>(TEXT("Sight config"));
+	SightConfig->DetectionByAffiliation.bDetectEnemies = true;
+	SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
+	SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
+	SightConfig->SightRadius = 1500.f;
+	SightConfig->LoseSightRadius = 1600.f;
+	SightConfig->PeripheralVisionAngleDegrees = 45.f;
+	SightConfig->SetMaxAge(5.0f);
+	PawnSense->ConfigureSense(*SightConfig);
+
+	UAISenseConfig_Hearing* HearingConfig = CreateDefaultSubobject<UAISenseConfig_Hearing>(TEXT("HearingConfig"));
+	HearingConfig->DetectionByAffiliation.bDetectEnemies = true;
+	HearingConfig->DetectionByAffiliation.bDetectFriendlies = true;
+	HearingConfig->DetectionByAffiliation.bDetectNeutrals = true;
+	HearingConfig->HearingRange = 800.f;
+	PawnSense->ConfigureSense(*HearingConfig);
+
+
 
 	Collision = CreateDefaultSubobject<USphereComponent>(TEXT("Collision"));
 	Collision->SetSphereRadius(100);
@@ -63,6 +91,8 @@ ATPS_Minion::ATPS_Minion()
 		SpawnedPickup = SpawnedPickupAsset.Class;
 	}
 
+	healthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
+
 }
 
 // Called when the game starts or when spawned
@@ -72,6 +102,12 @@ void ATPS_Minion::BeginPlay()
 
 	SetNextPosition();
 	
+	//if (healthComp)
+	//{
+	//	//healthComp->OnDeathEventDelegate.AddDynamic(this, &AIHPlayer::OnDeathEvent);
+	//	healthComp->OnDeathEventDelegate.AddUObject(this, &ATPS_Minion::OnDeathEvent);
+	//}
+
 }
 
 // Called every frame
@@ -150,9 +186,17 @@ void ATPS_Minion::PostInitializeComponents()
 		return;
 
 	OnActorBeginOverlap.AddDynamic(this, &ATPS_Minion::OnCatchPlayer);
-	GetPawnSense()->OnSeePawn.AddDynamic(this, &ATPS_Minion::OnCharacterDetected);
-	GetPawnSense()->OnHearNoise.AddDynamic(this, &ATPS_Minion::OnHearNoise);
-	OnTakeAnyDamage.AddDynamic(this, &ATPS_Minion::OnDamage);
+
+	/*GetPawnSense()->OnSeePawn.AddDynamic(this, &ATPS_Minion::OnCharacterDetected);
+	GetPawnSense()->OnHearNoise.AddDynamic(this, &ATPS_Minion::OnHearNoise);*/
+	//OnTakeAnyDamage.AddDynamic(this, &ATPS_Minion::OnDamage);
+
+	if (GetPawnSense())
+	{
+		GetPawnSense()->OnTargetPerceptionUpdated.AddDynamic(this, &ATPS_Minion::OnTargetPerceptionUpdated);
+	}
+
+	
 }
 
 void ATPS_Minion::OnCharacterDetected(APawn* Player)
@@ -183,10 +227,7 @@ void ATPS_Minion::OnCatchPlayer(AActor* OverlappedActor, AActor* OtherActor)
 
 void ATPS_Minion::OnDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
-	Health -= Damage;
-
-	if (Health > 0)
-		return;
+	//healthComp->currentHP -= Damage;
 
 	if (SpawnedPickup)
 	{
@@ -194,5 +235,43 @@ void ATPS_Minion::OnDamage(AActor* DamagedActor, float Damage, const UDamageType
 	}
 
 	Destroy();
+}
+
+void ATPS_Minion::OnDeathEvent(AActor* DamageCauser)
+{
+	if (HasAuthority())
+	{
+		if (SpawnedPickup)
+		{
+			GetWorld()->SpawnActor<ATPS_BasePickup>(SpawnedPickup, GetActorLocation(), GetActorRotation());
+		}
+
+		//SetLifeSpan()
+	}
+}
+
+void ATPS_Minion::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
+{
+	if (Stimulus.WasSuccessfullySensed() == false)
+		return;
+
+	FAISenseID sightID = UAISense::GetSenseID(UAISense_Sight::StaticClass());
+	FAISenseID hearingID = UAISense::GetSenseID(UAISense_Hearing::StaticClass());
+
+	if (Stimulus.Type == sightID)
+	{
+		if (APawn* Pawn = Cast<APawn>(Actor))
+		{
+			OnCharacterDetected(Pawn);
+		}
+	}
+
+	else if (Stimulus.Type == hearingID)
+	{
+		if (APawn* Pawn = Cast<APawn>(Actor))
+		{
+			OnHearNoise(Pawn, Stimulus.ReceiverLocation, Stimulus.Strength);
+		}
+	}
 }
 

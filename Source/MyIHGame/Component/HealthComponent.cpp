@@ -6,6 +6,7 @@
 #include "NiagaraDataInterface.h"
 #include "../Character/IHPlayer.h"
 #include "../Animation/IHPlayerAnimInstance.h"
+#include "../Enemy/TPS_Minion.h"
 
 #include "Component/HealthComponent.h"
 
@@ -20,6 +21,8 @@ UHealthComponent::UHealthComponent()
 		FSoftObjectPath(TEXT("/Game/Assets/Effects/Particles/Impacts/NS_DamageNumbers.NS_DamageNumbers")));
 
 	SetIsReplicatedByDefault(true);
+
+	DeathEffect = TSoftObjectPtr<UNiagaraSystem>(FSoftObjectPath(TEXT("/Game/Assets/Effects/Particles/Impacts/NS_DeathCubes.NS_DeathCubes")));
 
 
 	// ...
@@ -83,10 +86,10 @@ void UHealthComponent::Multicast_ChangeCurrentHP_Implementation(float Damage, AA
 	}
 
 	{
-		auto test0 = GetOwner()->GetLocalRole();
+		/*auto test0 = GetOwner()->GetLocalRole();
 		auto test1 = GetOwner();
 		auto test2 = OwningCharacter;
-		auto test3 = OwningCharacter->GetController();
+		auto test3 = OwningCharacter->GetController();*/
 	}
 
 
@@ -125,10 +128,12 @@ void UHealthComponent::TakePointDamage(AActor* DamagedActor, float Damage, ACont
 	{
 		GetOwner()->OnTakePointDamage.RemoveDynamic(this, &UHealthComponent::TakePointDamage);
 
-		FTimerHandle RespawnTimerHandle;
+		/*FTimerHandle RespawnTimerHandle;
 
-		Multicast_death();
-		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, this, &UHealthComponent::DeathTimerExpire, deathDelayTime, false);
+
+		GetWorld()->GetTimerManager().SetTimer(RespawnTimerHandle, this, &UHealthComponent::DeathTimerExpire, deathDelayTime, false);*/
+
+		Multicast_death(DamageCauser);
 	}
 
 	currentHP = FMath::Clamp(currentHP - Damage, 0, maxHP);
@@ -158,10 +163,12 @@ void UHealthComponent::PlayDamageEffect(float Damage, FVector HitLocation)
 	);
 }
 
-void UHealthComponent::Multicast_death_Implementation()
+void UHealthComponent::Multicast_death_Implementation(AActor* DamgeCauser)
 {
+	OnDeathEventDelegate.Broadcast(DamgeCauser);
+
 	ACharacter* Character = Cast<ACharacter>(GetOwner());
-	if (Character)
+	if (Character && Character->IsA(AIHPlayer::StaticClass()))
 	{
 		UIHPlayerAnimInstance* animInstance = Cast<UIHPlayerAnimInstance>(Character->GetMesh()->GetAnimInstance());
 
@@ -173,18 +180,14 @@ void UHealthComponent::Multicast_death_Implementation()
 	{
 		Player->OnPlayDeathEffec();
 	}
-}
 
-void UHealthComponent::DeathTimerExpire()
-{
-	ATPS_GameMode* GameMode = Cast<ATPS_GameMode>(GetWorld()->GetAuthGameMode());
-	if (GameMode)
+	/*if (Character->IsA(ATPS_Minion::StaticClass()))
 	{
-		GameMode->PlayerRespawn(Cast<ACharacter>(GetOwner()));
-	}
-
-	return;
+		Character->Destroy();
+	}*/
 }
+
+
 
 void UHealthComponent::ResetHitFxTimer()
 {

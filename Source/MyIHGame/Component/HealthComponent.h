@@ -8,6 +8,7 @@
 #include "../Game/TPS_GameMode.h"
 #include "HealthComponent.generated.h"
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FDeathEventDelegate, class AActor*);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MYIHGAME_API UHealthComponent : public UActorComponent
@@ -53,6 +54,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "MY|Damage Floater")
 	TSoftObjectPtr<class UNiagaraSystem> damageFloaterEffect2;
 
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite, Category = "MY|Damage Floater")
+	TSoftObjectPtr<class UNiagaraSystem> DeathEffect;
+
 	void PlayDamageEffect(float Damage ,FVector HitLocation);
 
 	UPROPERTY()
@@ -60,7 +64,7 @@ public:
 
 	//ªÁ∏¡√≥∏Æ
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_death();
+	void Multicast_death(AActor* DamgeCauser);
 
 	void DeathTimerExpire();
 
@@ -73,5 +77,8 @@ public:
 private:
 	FTimerHandle HitFXTimerHander;
 	void ResetHitFxTimer();
+
+public:
+	FDeathEventDelegate OnDeathEventDelegate;
 
 };

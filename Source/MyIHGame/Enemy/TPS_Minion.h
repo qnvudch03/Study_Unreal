@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Perception/AIPerceptionTypes.h"
 #include "TPS_Minion.generated.h"
 
 UCLASS()
@@ -49,7 +50,7 @@ public:
 
 	virtual void PostInitializeComponents() override;
 
-	FORCEINLINE class UPawnSensingComponent* GetPawnSense() { return PawnSense; }
+	FORCEINLINE class UAIPerceptionComponent* GetPawnSense() { return PawnSense; }
 
 	FORCEINLINE class USphereComponent* GetCollider() { return Collision; }
 
@@ -61,7 +62,7 @@ public:
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minion Perception", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UPawnSensingComponent> PawnSense;
+	TObjectPtr<class UAIPerceptionComponent> PawnSense;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Minion Perception", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class USphereComponent> Collision;
@@ -79,12 +80,23 @@ private:
 
 public:
 	//Combat
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Combat")
-	float Health = 5.0f;
+	/*UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Combat")
+	float Health = 5.0f;*/
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "MY|HealthComponent")
+	class UHealthComponent* healthComp;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Combat")
 	TSubclassOf<class ATPS_BasePickup> SpawnedPickup;
 
 	UFUNCTION()
 	void OnDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser);
+
+	void OnDeathEvent(AActor* DamageCauser);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = Health)
+	void OnMionDeathEffec();
+
+	UFUNCTION()
+	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 };
