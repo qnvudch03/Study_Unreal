@@ -77,6 +77,11 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "OnPlayDeathEffect")
 	void OnPlayDeathEffect();
 
+
+	//DamageFloater
+	UFUNCTION(Client, Reliable)
+	void Client_DamageFloat(float Damage, FVector HitLocation);
+
 private:
 	FTimerHandle HitFXTimerHander;
 	void ResetHitFxTimer();

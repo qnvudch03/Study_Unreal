@@ -13,5 +13,9 @@ UCLASS()
 class MYIHGAME_API ATPS_GameState : public AGameState
 {
 	GENERATED_BODY()
+
+public:
+	TArray<class ATPS_PlayerState*> RedTeam;
+	TArray<class ATPS_PlayerState*> BlueTeam;
 	
 };

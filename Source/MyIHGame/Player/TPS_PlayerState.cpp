@@ -35,6 +35,8 @@ void ATPS_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME_CONDITION(ATPS_PlayerState, Lv, COND_OwnerOnly);
 
 	DOREPLIFETIME(ATPS_PlayerState, SkinIndex);
+	DOREPLIFETIME(ATPS_PlayerState, Team);
+
 }
 
 void ATPS_PlayerState::OnRep_Xp()
@@ -45,4 +47,21 @@ void ATPS_PlayerState::OnRep_Xp()
 void ATPS_PlayerState::OnRep_Lv()
 {
 	OnLvChagned.Broadcast(Lv);
+}
+
+void ATPS_PlayerState::CopyProperties(APlayerState* PlayerState)
+{
+	Super::CopyProperties(PlayerState);
+
+	ATPS_PlayerState* NewPlayerState = Cast<ATPS_PlayerState>(PlayerState);
+
+	if (NewPlayerState)
+	{
+		NewPlayerState->SkinIndex = SkinIndex;
+	}
+}
+
+void ATPS_PlayerState::OnRep_PlayerName()
+{
+
 }

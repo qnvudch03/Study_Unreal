@@ -14,7 +14,8 @@ public class MyIHGame : ModuleRules
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", 
 			"Engine", "InputCore", "EnhancedInput", 
 			"UMG", "Niagara", "NavigationSystem", "AIModule",
-			"GameplayTags"
+            "OnlineSubsystem", "OnlineSubsystemUtils","GameplayTags",
+			"MoviePlayer"
 		
 		});
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

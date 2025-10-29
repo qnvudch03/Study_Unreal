@@ -7,6 +7,7 @@
 #include "NiagaraDataInterface.h"
 #include "../Character/IHPlayer.h"
 #include "../Animation/IHPlayerAnimInstance.h"
+#include <Kismet/GameplayStatics.h>
 #include "../Enemy/TPS_Minion.h"
 
 
@@ -70,22 +71,23 @@ void UHealthComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void UHealthComponent::Multicast_ChangeCurrentHP_Implementation(float Damage, AActor* hittedactor, AController* InstigatedBy, FVector_NetQuantize HitLocation)
 {
 	ACharacter* character = Cast<ACharacter>(GetOwner());
+	AIHPlayer* ihPlayer = Cast<AIHPlayer>(character);
 	if (ACharacter* HitCharacter = Cast<ACharacter>(GetOwner()))
-	if(GetOwner())
-	{
-		for (int32 i = 0; i < HitCharacter->GetMesh()->GetMaterials().Num(); i++)
+		if (GetOwner())
 		{
-			UMaterialInstanceDynamic* DynamicMaterial = HitCharacter->GetMesh()->CreateDynamicMaterialInstance(i);
-
-			if (DynamicMaterial)
+			for (int32 i = 0; i < HitCharacter->GetMesh()->GetMaterials().Num(); i++)
 			{
-				DynamicMaterial->SetScalarParameterValue(FName("HitFxSwitch"), 1.0f);
-				DynamicMaterial->SetVectorParameterValue(FName("HitEmissiveColor"), FVector(0, 0, 1));
+				UMaterialInstanceDynamic* DynamicMaterial = HitCharacter->GetMesh()->CreateDynamicMaterialInstance(i);
+
+				if (DynamicMaterial)
+				{
+					DynamicMaterial->SetScalarParameterValue(FName("HitFxSwitch"), 1.0f);
+					DynamicMaterial->SetVectorParameterValue(FName("HitEmissiveColor"), FVector(0, 0, 1));
+				}
 			}
+			GetWorld()->GetTimerManager().ClearTimer(HitFXTimerHander);
+			GetWorld()->GetTimerManager().SetTimer(HitFXTimerHander, this, &UHealthComponent::ResetHitFxTimer, 0.5);
 		}
-		GetWorld()->GetTimerManager().ClearTimer(HitFXTimerHander);
-		GetWorld()->GetTimerManager().SetTimer(HitFXTimerHander, this, &UHealthComponent::ResetHitFxTimer, 0.5);
-	}
 
 	{
 		/*auto test0 = GetOwner()->GetLocalRole();
@@ -97,31 +99,24 @@ void UHealthComponent::Multicast_ChangeCurrentHP_Implementation(float Damage, AA
 
 
 
-	if (GetOwner() == hittedactor) //(GetOwner() == hittedactor))
+
+	if (damageFloaterEffect2.IsValid())
 	{
-		if (damageFloaterEffect2.IsValid())
-		{
-			TWeakObjectPtr<UHealthComponent> WeakThis = this;
+		TWeakObjectPtr<UHealthComponent> WeakThis = this;
 
-			FStreamableManager& StreamableManager = UAssetManager::Get().GetStreamableManager();
-			StreamableManager.RequestAsyncLoad(damageFloaterEffect2.ToSoftObjectPath(),
-				FStreamableDelegate::CreateLambda(
-					[WeakThis, Damage, HitLocation]()
+		FStreamableManager& StreamableManager = UAssetManager::Get().GetStreamableManager();
+		StreamableManager.RequestAsyncLoad(damageFloaterEffect2.ToSoftObjectPath(),
+			FStreamableDelegate::CreateLambda(
+				[WeakThis, Damage, HitLocation]()
+				{
+					if (WeakThis.IsValid())
 					{
-						if (WeakThis.IsValid())
-						{
-							WeakThis->PlayDamageEffect(Damage, HitLocation);
-						}
+						WeakThis->PlayDamageEffect(Damage, HitLocation);
 					}
-				));
-		}
-
-		else
-		{
-
-		}
+				}
+			));
 	}
-	//currentHP = FMath::Clamp(currentHP - Damage, 0, maxHP);
+
 }
 
 void UHealthComponent::TakePointDamage(AActor* DamagedActor, float Damage, AController* InstigatedBy, FVector HitLocation, UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, const UDamageType* DamageType, AActor* DamageCauser)
@@ -144,6 +139,39 @@ void UHealthComponent::TakePointDamage(AActor* DamagedActor, float Damage, ACont
 	BeDamagedActor = DamagedActor;
 
 	Multicast_ChangeCurrentHP(Damage, BeDamagedActor, ShootInstigater, HitLocation);
+	
+	APlayerController* MyPlayercontroller = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+	if (InstigatedBy == MyPlayercontroller) 
+	{
+		// 클라입장에서, 다른유저가 쏘면, IntigatedBy == nullptr; MyPlayerController = @
+		// 서버입장에서, 다른유저가 쏘면, IntigatedBy == #; MyPlayerController = 
+		// 내가 쐇다?
+	}
+
+	// 맞은건 어떻게?
+	//MyPlayercontroller->GetPawn()
+
+
+
+	APawn* damagedPawn = Cast<APawn>(DamagedActor);
+	int currentControllers = UGameplayStatics::GetNumPlayerControllers(GetWorld());
+
+	for (int i = 0; i < currentControllers; i++)
+	{
+		APlayerController* playercontroller = UGameplayStatics::GetPlayerController(GetWorld(), i);
+
+		AController* controller = Cast<AController>(playercontroller);
+		if (controller != nullptr && 
+			((controller == InstigatedBy) || (controller == damagedPawn->GetController())))
+		{
+			AIHPlayer* ihPlayer = Cast<AIHPlayer>(controller->GetCharacter());
+			if (ihPlayer)
+			{
+				ihPlayer->healthComp->Client_DamageFloat(Damage, HitLocation);
+			}
+		}
+
+	}
 }
 
 void UHealthComponent::TakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
@@ -163,7 +191,7 @@ void UHealthComponent::TakeAnyDamage(AActor* DamagedActor, float Damage, const U
 
 void UHealthComponent::PlayDamageEffect(float Damage, FVector HitLocation)
 {
-	UNiagaraComponent* NS_DamageFloat = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+	/*UNiagaraComponent* NS_DamageFloat = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
 		GetWorld(),
 		damageFloaterEffect2.Get(),
 		HitLocation
@@ -177,7 +205,7 @@ void UHealthComponent::PlayDamageEffect(float Damage, FVector HitLocation)
 		NS_DamageFloat,
 		FName("DamageInfo"),
 		VectorArray
-	);
+	);*/
 }
 
 void UHealthComponent::Multicast_death_Implementation(AActor* DamgeCauser)
@@ -205,6 +233,25 @@ void UHealthComponent::Multicast_death_Implementation(AActor* DamgeCauser)
 }
 
 
+
+void UHealthComponent::Client_DamageFloat_Implementation(float Damage, FVector HitLocation)
+{
+	UNiagaraComponent* NS_DamageFloat = UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+		GetWorld(),
+		damageFloaterEffect2.Get(),
+		HitLocation
+	);
+
+	TArray<FVector4> VectorArray;
+	FVector4 ParamValue(HitLocation.X, HitLocation.Y, HitLocation.Z, Damage);
+	VectorArray.Add(ParamValue);
+
+	UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVector4(
+		NS_DamageFloat,
+		FName("DamageInfo"),
+		VectorArray
+	);
+}
 
 void UHealthComponent::ResetHitFxTimer()
 {

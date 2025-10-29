@@ -25,6 +25,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "../Component/HealthComponent.h"
 #include "../Player/TPS_PlayerState.h"
+#include "../Weapon/IHWeapon.h"
 #include <Components/PawnNoiseEmitterComponent.h>
 
 
@@ -72,6 +73,7 @@ AIHPlayer::AIHPlayer()
 	MoveComp = CreateDefaultSubobject<UIHPlayerMoveComponent>(TEXT("MoveComp"));
 	FireComp = CreateDefaultSubobject<UIHPlayerFireComponent>(TEXT("FireComp"));
 	healthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
+	//hpbarWidgetComponent = CreateDefaultSubobject< UIHWidgetComponent>(TEXT("HpBar Widget"));
 
 	NoiseEmitter = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("NoiseEmitter"));
 	NoiseEmitter->NoiseLifetime = 0.01f;
@@ -246,6 +248,9 @@ void AIHPlayer::Tick(float DeltaTime)
 		InteractableActor = nullptr;
 	}
 
+	if (this->CharacterStat == nullptr)
+		return;
+
 	if (GetCharacterMovement()->MaxWalkSpeed == GetCharacterStat()->SprintSpeed)
 	{
 		auto Noise = 1.0f;
@@ -345,6 +350,21 @@ void AIHPlayer::OnHitEvent()
 		PRINT_LOG(TEXT("Player is dead!"));
 		OnGameOver();
 	}*/
+}
+
+void AIHPlayer::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	if (HasAuthority())
+	{
+		if (FireComp && FireComp->Weapon)
+		{
+			FireComp->Weapon->Destroy();
+		}
+	}
+
+	
 }
 
 void AIHPlayer::OnDeathEvent(AActor* DamageCauser)

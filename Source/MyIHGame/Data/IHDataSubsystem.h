@@ -22,7 +22,7 @@ public:
 	//SingleTon 계열은 엔진이 알아서 만들어 주는데..그래서 C++버젼이랑, 블루프린트가 존재한다면 2개가 만들어짐
 	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UIHInputDataAsset> InputDataAsset;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -30,4 +30,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<class USkeletalMesh*> SkinAssetList;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UUserWidget> LoadingWidgetClass;
 };

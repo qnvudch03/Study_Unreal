@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
+#include "../Util/IHDefine.h"
 #include "TPS_PlayerState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnXpChanged, int32, NewXp);
@@ -46,5 +47,12 @@ protected:
 	FOnLvChagned OnLvChagned;
 
 
-	
+protected:
+	virtual void CopyProperties(APlayerState* PlayerState) override;
+
+	virtual void OnRep_PlayerName() override;
+
+public:
+	UPROPERTY(Replicated)
+	ETeamType Team = ETeamType::FreeForAll;
 };

@@ -44,8 +44,22 @@ public:
 	UPROPERTY(EditAnywhere, Category = "IHGame|Weapon")
 	float Speed = 5000;
 
+	UPROPERTY(EditDefaultsOnly, Category = "MY|BulletTrail")
+	TObjectPtr<class UNiagaraSystem> TrailEffect;
+
+	UPROPERTY(EditDefaultsOnly, Category = "MY|BulletTrail")
+	TObjectPtr<class UParticleSystem> HittedEffect;
+
 	// 총알을 삭제시키는 타이머
 	FTimerHandle DeathTimer;
+
+	UFUNCTION()
+	void OnBulletOverlapWith(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnBulletHitted(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+
 
 #if WITH_EDITOR
 	// 액터의 특정 속성을 수정하면 호출되는 이벤트 함수

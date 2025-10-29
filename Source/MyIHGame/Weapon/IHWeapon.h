@@ -51,10 +51,57 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|FPS")
 	float damage = 10;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Value")
+	float damage_Min = 5;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Value")
+	float damage_InnerRadious = 5;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MY|Value")
+	float damage_OuterRadious = 30;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|FireAnimation")
 	TObjectPtr<UAnimationAsset> weaponFireAnimation;
 
 	void PlayFireAnimation();
 
 	FVector GetMuzzleFlashLocation();
+
+	UFUNCTION()
+	void OnWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void Test(AActor* OverlappedActor, AActor* OtherActor);
+
+	void Equip();
+	void UnEquip();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|Value")
+	TSubclassOf<class AIHBullet> Bullet;
+
+	void Fire(FVector startPos, FVector randomDir);
+
+	void FireBullet(FVector startPos, FVector randomDir);
+	void FireLineTrace(FVector startPos, FVector randomDir);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IHGame|Weapon")
+	TObjectPtr<class UNiagaraSystem> BulletEffectFactory;
+
+	// ÃÑ¾Ë ±ËÀû ÆÄÆ¼Å¬
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IHGame|Weapon")
+	TObjectPtr<class UNiagaraSystem> BeamParticelFactory;
+
+	// ÅºÈç ¸ÓÆ¼¸®¾ó
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "IHGame|Weapon")
+	class UMaterialInterface* BulletDecalMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "IHGame|Weapon")
+	FVector DecalSize = FVector(10.0f, 10.0f, 10.0f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IHGame|Weapon")
+	float DecalLifetime = 10.f;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "IHGame|Weapon")
+	class USoundBase* HitSound;
 };

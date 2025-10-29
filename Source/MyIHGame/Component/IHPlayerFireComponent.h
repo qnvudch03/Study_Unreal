@@ -30,23 +30,6 @@ private:
 
 public:
 
-	UPROPERTY(EditAnywhere, Category = "IHGame|Weapon")
-	TObjectPtr<class UNiagaraSystem> BulletEffectFactory;
-
-	// 총알 궤적 파티클
-	UPROPERTY(EditAnywhere, Category = "IHGame|Weapon")
-	TObjectPtr<class UNiagaraSystem> BeamParticelFactory;
-
-	// 탄흔 머티리얼
-	UPROPERTY(EditDefaultsOnly, Category = "IHGame|Weapon")
-	class UMaterialInterface* BulletDecalMaterial;
-
-	UPROPERTY(EditAnywhere, Category = "IHGame|Weapon")
-	FVector DecalSize = FVector(10.0f, 10.0f, 10.0f);
-
-	UPROPERTY(EditAnywhere, Category = "IHGame|Weapon")
-	float DecalLifetime = 10.f;
-
 	// 책에서 알려준 캐스케이드 파티클 저장
 	//UPROPERTY(EditAnywhere, Category = "IHGame|Weapon")
 	//class UParticleSystem* BulletEffectFactory;
@@ -72,9 +55,6 @@ public:
 	float AimOffset_Pitch = 0;
 	float AimOffset_StartYaw = 0;	// 차이점을 계산할 기준 Yaw값
 
-
-	UPROPERTY(EditAnywhere, Category = "IHGame|Weapon")
-	class USoundBase* HitSound;
 
 	UPROPERTY()
 	class UCameraComponent* CamComp;
@@ -172,4 +152,10 @@ public:
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void InputFire_Multicast(FVector_NetQuantize10 startPos, FVector_NetQuantize10 randomDirection);
+
+	void ChangeWeapon(class AIHWeapon* newWeapon);
+
+	void Fire(FVector startPos, FVector randomDirection);
+
+
 };

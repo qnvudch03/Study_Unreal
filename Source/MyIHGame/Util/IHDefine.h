@@ -15,3 +15,11 @@ enum class ETurnInPlace : uint8
 	ETIP_Right UMETA(DisplayName = "Turn Right"),
 	ETIP_NotTurning UMETA(DisplayName = "Not Turning")
 };
+
+UENUM(BlueprintType)
+enum class ETeamType : uint8
+{
+	Team_Blue,
+	Team_Red,
+	FreeForAll,
+};

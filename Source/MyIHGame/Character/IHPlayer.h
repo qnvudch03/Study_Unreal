@@ -123,6 +123,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = Health)
 	void OnPlayDeathEffec();
 
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
+
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MY|Character Data", meta = (AllowPrivateAccess = "true"))
 	class UDataTable* CharacterDataTable;
@@ -142,4 +145,8 @@ private:
 	float deathDelayTime = 2.0f;
 
 	void PlayerDeathTimerExpire();
+
+	public:
+		UFUNCTION(BlueprintImplementableEvent, Category = "MY|")
+		void OnSetPlayerNameWidget(const FString& PlayerName);
 };
