@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "../Util/IHDefine.h"
 #include "TPS_GameInstance.generated.h"
 
 /**
@@ -41,7 +42,19 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StartGame(bool TeamMatch, const FString& InURL);
 
-	UPROPERTY()
-	UUserWidget* LoadingWidget;
+	TMap<FUniqueNetIdRepl, bool> ConnectedPlayerState;
+	void MakeConnectedAllPlayerState();
+
+	bool IsAllPlayerReady();
+
+	void SetPlayerReady(FUniqueNetIdRepl uniqueID);
+	void RemovePlayerReady(FUniqueNetIdRepl uniqueID);
+
+	//UPROPERTY()
+	//UUserWidget* LoadingWidget;
+
+	TSharedPtr<SWidget> LoadingWidget;
+
+	EWinningTeam lastWinTeamType = EWinningTeam::Draw;
 	
 };

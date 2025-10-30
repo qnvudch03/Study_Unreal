@@ -9,13 +9,19 @@
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
 #include "Interfaces/OnlineSessionInterface.h"
+#include "../Instance/TPS_GameInstance.h"
 #include "../Character/IHPlayer.h"
 
 void ATPS_PlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (HasAuthority())
+	if (IsLocalController())
+	{
+		Server_RequestServerTime(GetWorld()->GetTimeSeconds());
+	}
+
+	/*if (HasAuthority())
 	{
 		ATPS_PlayerState* characterState = GetPlayerState<ATPS_PlayerState>();
 		UTPS_GameInstance* gameInstace = GetGameInstance<UTPS_GameInstance>();
@@ -37,8 +43,24 @@ void ATPS_PlayerController::BeginPlay()
 		{
 			player->OnSetPlayerNameWidget(characterState->GetPlayerName());
 		}
-	}
+	}*/
 
+}
+
+void ATPS_PlayerController::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (IsLocalController() && HasAuthority() == false)
+	{
+		LastTimeSynce += DeltaTime;
+
+		if (LastTimeSynce > TimeSyncFrequence)
+		{
+			Server_RequestServerTime(GetWorld()->GetTimeSeconds());
+			LastTimeSynce = 0;
+		}
+	}
 }
 
 void ATPS_PlayerController::OnRep_PlayerState()
@@ -52,7 +74,7 @@ void ATPS_PlayerController::OnRep_PlayerState()
 		return;
 
 
-	characterState->SetPlayerName(gameInstace->PlayerName);
+	//characterState->SetPlayerName(gameInstace->PlayerName);
 
 	APawn* controlledPawn = GetPawn();
 
@@ -70,30 +92,27 @@ void ATPS_PlayerController::OnRep_PlayerState()
 
 }
 
-void ATPS_PlayerController::Client_ReturnToMenu_Implementation()
+void ATPS_PlayerController::Client_ShowGameResult_Implementation(EWinningTeam winningTeam)
 {
-	IOnlineSubsystem* subsystem = Online::GetSubsystem(GetWorld());
-	{
-		if (subsystem)
-		{
-			auto SessionInteface = subsystem->GetSessionInterface();
-			SessionInteface->DestroySession(NAME_GameSession);
-		}
-	}
+	UTPS_GameInstance* gameInstace = GetGameInstance<UTPS_GameInstance>();
+	if (gameInstace == nullptr)
+		return;
+
+	gameInstace->lastWinTeamType = winningTeam;
 }
 
-//void ATPS_PlayerController::ClientReturnToMainMenuWithTextReason(const FText& ReturnReason)
-//{
-//	/*IOnlineSubsystem* subsystem = IOnlineSubsystem::Get();
-//	{
-//		if (subsystem)
-//		{
-//			auto SessionInteface = subsystem->GetSessionInterface();
-//			SessionInteface->DestroySession(NAME_GameSession);
-//		}
-//	}
-//	Super::ClientReturnToMainMenuWithTextReason(ReturnReason);*/
-//}
+
+void ATPS_PlayerController::Server_OnPlayerNameAssine_Implementation(ATPS_PlayerController* controller, const FString& name)
+{
+	ATPS_PlayerState* playerState = controller->GetPlayerState<ATPS_PlayerState>();
+	if (playerState)
+	{
+		playerState->SetPlayerName(name);
+		Client_BroadCastUserName(controller, name);
+	}
+	
+
+}
 
 void ATPS_PlayerController::Client_BroadCastUserName_Implementation(ATPS_PlayerController* controller, const FString& name)
 {
@@ -122,28 +141,101 @@ void ATPS_PlayerController::Client_BroadCastUserName_Implementation(ATPS_PlayerC
 				if (namedControler == controller)
 				{
 					player->OnSetPlayerNameWidget(name);
+
+					ATPS_PlayerState* characterState = GetPlayerState<ATPS_PlayerState>();
+
+					characterState->SetPlayerName(name);
 				}
-				
+
 			}
 		}
 	}
 
 }
 
-void ATPS_PlayerController::Server_OnPlayerNameAssine_Implementation(ATPS_PlayerController* controller, const FString& name)
+void ATPS_PlayerController::Client_MatchState_Implementation(float startTime, float matchTime)
 {
-	auto var =  controller->GetGameInstance<UTPS_GameInstance>()->PlayerName;
+	LevelStartTime = startTime;
+	LevelMatchTime = matchTime;
+}
 
-	TArray<AActor*> OutActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATPS_PlayerController::StaticClass(), OutActors);
+//void ATPS_PlayerController::Client_MatchState(float startTime, float matchTime)
+//{
+//	LevelStartTime = startTime;
+//	LevelMatchTime = matchTime;
+//}
 
-	for (auto var2 : OutActors)
+void ATPS_PlayerController::PostSeamlessTravel()
+{
+	Super::PostSeamlessTravel();
+
+	UTPS_GameInstance* GameInstacne = Cast< UTPS_GameInstance>(GetGameInstance());
+
+	if (GameInstacne == nullptr)
+		return;
+
+	GameInstacne->SetPlayerReady(PlayerState->GetUniqueId());
+	
+}
+
+float ATPS_PlayerController::GetServerTime()
+{
+	if (HasAuthority())
 	{
-		FString Name = Cast<ATPS_PlayerController>(var2)->GetGameInstance<UTPS_GameInstance>()->PlayerName;
-
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Black, Name);
+		return GetWorld()->GetTimeSeconds();
 	}
 
-	Client_BroadCastUserName(controller, name);
-
+	return GetWorld()->GetTimeSeconds() + ClientServerDelta;
 }
+
+void ATPS_PlayerController::Client_ReportServerTime_Implementation(float TimeOfClientRequest, float ServerTime)
+{
+	float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOfClientRequest;
+	float CurrentServerTime = ServerTime + (RoundTripTime * 0.5f);
+
+	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
+}
+
+void ATPS_PlayerController::Server_RequestServerTime_Implementation(float TimeOfClientRequest)
+{
+	float ServerTime = GetWorld()->GetTimeSeconds();
+	Client_ReportServerTime(TimeOfClientRequest, ServerTime);
+}
+
+//void ATPS_PlayerController::Server_PlayerReady_Implementation()
+//{
+//	UTPS_GameInstance* GameInstacne = Cast< UTPS_GameInstance>(GetGameInstance());
+//
+//	if (GameInstacne == nullptr)
+//		return;
+//
+//	GameInstacne->SetPlayerReady(PlayerState->GetUniqueId());
+//}
+
+void ATPS_PlayerController::Client_ReturnToMenu_Implementation()
+{
+	IOnlineSubsystem* subsystem = Online::GetSubsystem(GetWorld());
+	{
+		if (subsystem)
+		{
+			auto SessionInteface = subsystem->GetSessionInterface();
+			SessionInteface->DestroySession(NAME_GameSession);
+		}
+	}
+}
+
+//void ATPS_PlayerController::ClientReturnToMainMenuWithTextReason(const FText& ReturnReason)
+//{
+//	/*IOnlineSubsystem* subsystem = IOnlineSubsystem::Get();
+//	{
+//		if (subsystem)
+//		{
+//			auto SessionInteface = subsystem->GetSessionInterface();
+//			SessionInteface->DestroySession(NAME_GameSession);
+//		}
+//	}
+//	Super::ClientReturnToMainMenuWithTextReason(ReturnReason);*/
+//}
+
+
+

@@ -7,6 +7,7 @@
 #include <MoviePlayer.h>
 #include "../Data/IHDataSubsystem.h"
 #include "../Game/IHLobbyState.h"
+#include "../Player/TPS_PlayerState.h"
 #include <GameFramework/GameMode.h>
 
 
@@ -45,11 +46,22 @@ void  UTPS_GameInstance::ShowLoadingScreen()
 		if (LoadingWidget == nullptr)
 		{
 			UUserWidget* Widget = CreateWidget<UUserWidget>(this, DataSubSystem->LoadingWidgetClass);
-			LoadingWidget = Widget;
+			LoadingWidget = Widget->TakeWidget();
+
+			UGameViewportClient* GameViewportClient = GetGameViewportClient();
+			if (GameViewportClient)
+			{
+				GameViewportClient->AddViewportWidgetContent(LoadingWidget.ToSharedRef(), 1000);
+			}
 		}
 		
-		LoadingWidget->AddToViewport(1000);
-	}
+		/*UGameViewportClient* GameViewportClient = GetGameViewportClient();
+
+		if (GameViewportClient)
+		{
+			GameViewportClient->AddViewportWidgetContent(LoadingWidget->TakeWidget());*/
+		}
+		//LoadingWidget->AddToViewport(1000);
 
 	else
 	{
@@ -72,11 +84,20 @@ void  UTPS_GameInstance::HideLoadingScreen()
 		TWeakObjectPtr<UTPS_GameInstance> temp = this;
 
 		FTimerHandle TimerHandle;
-		GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([temp]()
+		GetWorld()->GetTimerManager().SetTimer(TimerHandle, FTimerDelegate::CreateLambda([this]()
 			{
-				temp->LoadingWidget->RemoveFromParent();
+				if (LoadingWidget.IsValid())
+				{
+					UGameViewportClient* GameViewportClient = GetGameViewportClient();
+					if (GameViewportClient)
+					{
+						GameViewportClient->RemoveViewportWidgetContent(LoadingWidget.ToSharedRef());
+					}
+
+					LoadingWidget.Reset();
+				}
 			}
-		), 2.0f, false);
+		), 0.5f, false);
 	}
 
 	else
@@ -140,6 +161,8 @@ void UTPS_GameInstance::StartGame(bool TeamMatch, const FString& InURL)
 	if (!World)
 		return;
 
+	MakeConnectedAllPlayerState();
+
 	AIHLobbyState* LobbyState = Cast< AIHLobbyState>(World->GetGameState());
 	if (LobbyState)
 	{
@@ -147,4 +170,51 @@ void UTPS_GameInstance::StartGame(bool TeamMatch, const FString& InURL)
 	}
 
 	World->ServerTravel(InURL);
+}
+
+void UTPS_GameInstance::MakeConnectedAllPlayerState()
+{
+	UWorld* world = GetWorld();
+	if (world == nullptr)
+		return;
+
+	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		APlayerController* PlayerController = Iterator->Get();
+		if (PlayerController && PlayerController->GetPawn() && PlayerController->GetPawn()->GetPlayerState())
+		{
+			ConnectedPlayerState.Add(PlayerController->GetPawn()->GetPlayerState()->GetUniqueId(), false);
+		}
+	}
+}
+
+bool UTPS_GameInstance::IsAllPlayerReady()
+{
+	for (const auto& Iter : ConnectedPlayerState)
+	{
+		if (Iter.Value == false)
+			return false;
+
+	}
+
+
+	return true;
+}
+
+void UTPS_GameInstance::SetPlayerReady(FUniqueNetIdRepl uniqueID)
+{
+	if (ConnectedPlayerState.Contains(uniqueID))
+	{
+		ConnectedPlayerState[uniqueID] = true;
+	}
+
+	
+}
+
+void UTPS_GameInstance::RemovePlayerReady(FUniqueNetIdRepl uniqueID)
+{
+	if (ConnectedPlayerState.Contains(uniqueID))
+	{
+		ConnectedPlayerState.Remove(uniqueID);
+	}
 }

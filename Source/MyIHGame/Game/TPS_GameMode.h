@@ -18,7 +18,27 @@ private:
 	//int32 SkinCount = 0;
 
 public:
+	UPROPERTY(EditDefaultsOnly)
+	float WaitTIme = 10.0f;
+
+	float CountdownTime = 10.0f;
+
+	float LevelStartTIme = 0.0f;
+
+	UPROPERTY(EditDefaultsOnly)
+	float LevelMatchTimeSec = 120.f;
+
+protected:
+	virtual void BeginPlay() override;
+
+	virtual bool ReadyToStartMatch_Implementation() override;
+
+	virtual void HandleMatchHasStarted() override;
+
+public:
 	ATPS_GameMode();
+
+	virtual void Tick(float DeltaTIme) override;
 
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
@@ -28,5 +48,8 @@ public:
 	virtual void RestartPlayer(AController* NewPlyaer) override;
 
 	void PlayerRespawn(ACharacter* DeathCharacter);
+
+public:
+	virtual void Logout(AController* Exiting) override;
 	
 };

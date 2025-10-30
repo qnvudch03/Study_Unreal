@@ -19,6 +19,8 @@ public:
 	// Sets default values for this character's properties
 	AIHPlayer();
 
+	virtual void PawnClientRestart() override;
+
 public:
 	// 입력 바인딩 델리게이트
 	FInputBindingDelegate OnInputBindingDelegate;

@@ -19,6 +19,115 @@
 #include <GameFramework/PlayerStart.h>
 #include <EngineUtils.h>
 #include "../Instance/TPS_GameInstance.h"
+#include "../PlayerController/TPS_PlayerController.h"
+#include <Net/OnlineEngineInterface.h>
+void ATPS_GameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	CountdownTime = WaitTIme;
+
+	LevelStartTIme = GetWorld()->GetTimeSeconds();
+}
+
+bool IsSeccionActive(UWorld* World)
+{
+	UOnlineEngineInterface* OnlineEngine = UOnlineEngineInterface::Get();
+
+	if (OnlineEngine)
+	{
+		return OnlineEngine->DoesSessionExist(World, NAME_GameSession);
+	}
+
+	return false;
+}
+
+bool ATPS_GameMode::ReadyToStartMatch_Implementation()
+{
+	if (IsSeccionActive(GetWorld()) == false)
+	{
+		return true;
+	}
+
+	UTPS_GameInstance* GameInstace = Cast< UTPS_GameInstance>(GetGameInstance());
+	if (GameInstace)
+	{
+		return GameInstace->IsAllPlayerReady();
+	}
+
+	return CountdownTime <= 0.0f;
+}
+
+void ATPS_GameMode::HandleMatchHasStarted()
+{
+	Super::HandleMatchHasStarted();
+
+	for (FConstPlayerControllerIterator IT = GetWorld()->GetPlayerControllerIterator(); IT; ++IT)
+	{
+		if (ATPS_PlayerController* PC = Cast< ATPS_PlayerController>(IT->Get()))
+		{
+			PC->Client_MatchState(LevelStartTIme, LevelMatchTimeSec);
+		}
+	}
+}
+
+void ATPS_GameMode::Tick(float DeltaTIme)
+{
+	Super::Tick(DeltaTIme);
+
+	if (MatchState == MatchState::WaitingToStart)
+	{
+		CountdownTime -= DeltaTIme;
+	}
+
+	else if (MatchState == MatchState::InProgress)
+	{
+		float LeftTIme = LevelMatchTimeSec - (GetWorld()->GetTimeSeconds() - LevelStartTIme);
+		if (LeftTIme < 0 && IsSeccionActive(GetWorld()))
+		{
+			ATPS_GameState* tpsGameState = GetGameState<ATPS_GameState>();
+			if (GameState)
+			{
+				EWinningTeam winTeam = EWinningTeam::Draw;
+
+
+				if (tpsGameState->RedKill > tpsGameState->BlueKill)
+				{
+					//·¹µå ½Â
+					winTeam = EWinningTeam::Win_RED;
+				}
+
+				else if (tpsGameState->RedKill < tpsGameState->BlueKill)
+				{
+					//ºí·ç ½Â
+					winTeam = EWinningTeam::Win_Blue;
+				}
+
+				else if (tpsGameState->RedKill == tpsGameState->BlueKill)
+				{
+					//¹«½ÂºÎ
+				}
+
+				else
+				{
+					//¿¨?
+				}
+
+				for (FConstPlayerControllerIterator IT = GetWorld()->GetPlayerControllerIterator(); IT; ++IT)
+				{
+					if (ATPS_PlayerController* PC = Cast< ATPS_PlayerController>(IT->Get()))
+					{
+						PC->Client_ShowGameResult(winTeam);
+
+						PC->ClientTravel(TEXT("/Game/Maps/ResultMap"), ETravelType::TRAVEL_Absolute);
+					}
+				}
+
+			}
+		}
+	}
+}
+
 ATPS_GameMode::ATPS_GameMode()
 {
 	GameStateClass = ATPS_GameMode::StaticClass();
@@ -38,7 +147,12 @@ ATPS_GameMode::ATPS_GameMode()
 	}
 
 	GameStateClass = ATPS_GameState::StaticClass();
+
+	bUseSeamlessTravel = true;
+	bDelayedStart = true;
 }
+
+
 
 AActor* ATPS_GameMode::ChoosePlayerStart_Implementation(AController* Player)
 {
@@ -212,5 +326,24 @@ void ATPS_GameMode::PlayerRespawn(ACharacter* DeathCharacter)
 
 	}
 
-	RestartPlayerAtPlayerStart(Controller, PlayerStatActors[RandIndex]);
+
+	if (Controller)
+	{
+		Controller->StartSpot = nullptr;
+		RestartPlayer(Controller);
+	}
+
+	//RestartPlayerAtPlayerStart(Controller, PlayerStatActors[RandIndex]);
+}
+
+void ATPS_GameMode::Logout(AController* Exiting)
+{
+	Super::Logout(Exiting);
+
+	UTPS_GameInstance* TPSGameInstace = Cast< UTPS_GameInstance>(GetGameInstance());
+	if (TPSGameInstace == nullptr)
+		return;
+
+	TPSGameInstace->RemovePlayerReady(Exiting->PlayerState->GetUniqueId());
+
 }

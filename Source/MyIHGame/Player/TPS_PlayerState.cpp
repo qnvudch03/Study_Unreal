@@ -4,6 +4,7 @@
 #include "Player/TPS_PlayerState.h"
 #include "../CharacterStat/CharacterStat.h"
 #include "../Character/IHPlayer.h"
+#include "../PlayerController/TPS_PlayerController.h"
 #include <Net/UnrealNetwork.h>
 
 void ATPS_PlayerState::AddXp(int32 value)
@@ -63,5 +64,32 @@ void ATPS_PlayerState::CopyProperties(APlayerState* PlayerState)
 
 void ATPS_PlayerState::OnRep_PlayerName()
 {
+	Super::OnRep_PlayerName();
 
+	//player->OnSetPlayerNameWidget(characterState->GetPlayerName());
+
+	if (true)
+	{
+		APlayerController* controller = GetPlayerController();
+		if (controller == nullptr)
+			return;
+
+		APawn* controlledPawn = Cast<ATPS_PlayerController>(controller)->GetPawn();
+
+		if (controlledPawn == nullptr)
+			return;
+
+		AIHPlayer* player = CastChecked<AIHPlayer>(controlledPawn);
+
+		if (player != nullptr)
+		{
+			player->OnSetPlayerNameWidget(GetPlayerName());
+		}
+
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Black, GetPlayerName());
+
+
+	}
+
+	
 }

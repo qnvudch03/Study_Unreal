@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "../Util/IHDefine.h"
 #include "TPS_PlayerController.generated.h"
 
 /**
@@ -17,8 +18,18 @@ class MYIHGAME_API ATPS_PlayerController : public APlayerController
 	void BeginPlay() override;
 
 public:
+	virtual void Tick(float DeltaTime) override;
 
 	virtual void OnRep_PlayerState() override;
+
+	UFUNCTION(Client, Reliable)
+	void Client_ShowGameResult(EWinningTeam winningTeam);
+
+	UFUNCTION(Client, Reliable)
+	void Client_MatchState(float startTime, float matchTime);
+
+	float LevelStartTime = 0;
+	float LevelMatchTime = 0;
 
 	UFUNCTION(Server, Reliable)
 	void Server_OnPlayerNameAssine(ATPS_PlayerController* controller, const FString& name);
@@ -28,4 +39,23 @@ public:
 
 	UFUNCTION(Client, Reliable)
 	void Client_ReturnToMenu();
+
+	virtual void PostSeamlessTravel() override;
+
+	UFUNCTION(Server, Reliable)
+	void Server_RequestServerTime(float TimeOfClientRequest);
+
+	UFUNCTION(Client, Reliable)
+	void Client_ReportServerTime(float TimeOfClientRequest, float ServerTime);
+
+	float ClientServerDelta = 0;
+	float GetServerTime();
+
+	UPROPERTY(EditAnywhere)
+	float TimeSyncFrequence = 5.0f;
+
+	float LastTimeSynce = 0;
+
+	/*UFUNCTION(Server, Reliable)
+	void Server_PlayerReady();*/
 };

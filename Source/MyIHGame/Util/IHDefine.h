@@ -23,3 +23,11 @@ enum class ETeamType : uint8
 	Team_Red,
 	FreeForAll,
 };
+
+UENUM(BlueprintType)
+enum class EWinningTeam : uint8
+{
+	Win_RED,
+	Win_Blue,
+	Draw
+};

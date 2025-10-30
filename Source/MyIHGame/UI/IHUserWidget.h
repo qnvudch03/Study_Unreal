@@ -14,6 +14,9 @@ class MYIHGAME_API UIHUserWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
+	void UpdateHpBar(class ATPS_PlayerController* PlayerController);
+	void UpdateRemainGameTime(class ATPS_PlayerController* PlayerController);
+
 public:
 	void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	
@@ -22,4 +25,9 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	class UProgressBar* HPProgress;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* TimeRemain;
+
+	uint32 CountdownTimeSec = 0;
 };

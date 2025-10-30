@@ -19,6 +19,14 @@ void UIHUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		return;
 	}
 
+	UpdateHpBar(PlayerController);
+
+	UpdateRemainGameTime(PlayerController);
+}
+
+void UIHUserWidget::UpdateHpBar(ATPS_PlayerController* PlayerController)
+{
+
 	AIHPlayer* PlayerCharacter = Cast<AIHPlayer>(PlayerController->GetPawn());
 	if (!PlayerCharacter)
 	{
@@ -42,3 +50,32 @@ void UIHUserWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		HPProgress->SetPercent(ratio);
 	}
 }
+
+void UIHUserWidget::UpdateRemainGameTime(class ATPS_PlayerController* PlayerController)
+{
+	if (TimeRemain == nullptr)
+		return;
+
+	float LeftTime = PlayerController->LevelMatchTime - (PlayerController->GetServerTime() - PlayerController->LevelStartTime);
+
+	if (LeftTime <= 0)
+	{
+		LeftTime = 0;
+	}
+
+	uint32 SecondLeft = FMath::CeilToInt(LeftTime);
+
+	if (SecondLeft != CountdownTimeSec)
+	{
+		int32 Minute = FMath::FloorToInt(LeftTime / 60.0f);
+		int32 Second = LeftTime - (Minute * 60);
+
+		FString CountdownText = FString::Printf(TEXT("%02d : %02d"), Minute, Second);
+		TimeRemain->SetText(FText::FromString(CountdownText));
+
+		CountdownTimeSec = SecondLeft;
+	}
+
+}
+
+

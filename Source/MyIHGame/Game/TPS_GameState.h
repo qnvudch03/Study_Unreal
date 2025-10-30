@@ -17,5 +17,12 @@ class MYIHGAME_API ATPS_GameState : public AGameState
 public:
 	TArray<class ATPS_PlayerState*> RedTeam;
 	TArray<class ATPS_PlayerState*> BlueTeam;
+
+	UPROPERTY(Replicated)
+	int32 BlueKill = 0;
+
+	UPROPERTY(Replicated)
+	int32 RedKill = 0;
 	
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 };

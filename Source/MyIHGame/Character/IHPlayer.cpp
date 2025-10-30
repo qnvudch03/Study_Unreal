@@ -81,6 +81,35 @@ AIHPlayer::AIHPlayer()
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
+void AIHPlayer::PawnClientRestart()
+{
+	Super::PawnClientRestart();
+
+	APlayerController* MyPlayerController = Cast<APlayerController>(Controller);
+	if (MyPlayerController)
+	{
+		auto SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(MyPlayerController->GetLocalPlayer());
+		if (SubSystem)
+		{
+			// ½Ì±ÛÅæ GameInstance °¡Á®¿À±â
+			UGameInstance* GameInstance = GetWorld()->GetGameInstance();
+			UIHDataSubsystem* DataSubsystem = GameInstance->GetSubsystem<UIHDataSubsystem>();
+			if (DataSubsystem == nullptr)
+				return;
+
+			UIHInputDataAsset* InputData = DataSubsystem->InputDataAsset;
+			if (InputData == nullptr)
+				return;
+
+			SubSystem->AddMappingContext(InputData->IMC_TPS, 0);
+		}
+
+		FInputModeGameOnly InputModeData;
+		MyPlayerController->SetInputMode(InputModeData);
+		MyPlayerController->SetShowMouseCursor(false);
+	}
+}
+
 void AIHPlayer::Interact_Server_Implementation()
 {
 	if (InteractableActor)
@@ -107,26 +136,6 @@ void AIHPlayer::BeginPlay()
 	if (UNetDriver* ND = GetWorld()->GetNetDriver())
 	{
 		ND->RelevantTimeout = 1.0f;
-	}
-	
-	APlayerController* MyPlayerController = Cast<APlayerController>(Controller);
-	if (MyPlayerController)
-	{
-		auto SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(MyPlayerController->GetLocalPlayer());
-		if (SubSystem)
-		{
-			// ½Ì±ÛÅæ GameInstance °¡Á®¿À±â
-			UGameInstance* GameInstance = GetWorld()->GetGameInstance();
-			UIHDataSubsystem* DataSubsystem = GameInstance->GetSubsystem<UIHDataSubsystem>();
-			if (DataSubsystem == nullptr)
-				return;
-
-			UIHInputDataAsset* InputData = DataSubsystem->InputDataAsset;
-			if (InputData == nullptr)
-				return;
-
-			SubSystem->AddMappingContext(InputData->IMC_TPS, 0);
-		}
 	}
 
 	UpdateCharacterStat(1);
