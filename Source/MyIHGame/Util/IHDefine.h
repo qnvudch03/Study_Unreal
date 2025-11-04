@@ -31,3 +31,10 @@ enum class EWinningTeam : uint8
 	Win_Blue,
 	Draw
 };
+
+UENUM(BlueprintType)
+enum class ECharacterType : uint8
+{
+	CT_Belica,
+	BT_Elva,
+};

@@ -41,6 +41,7 @@ public:
 	virtual void Tick(float DeltaTIme) override;
 
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
 
 	UFUNCTION(BlueprintCallable, Category = "MY|Minions")
 	void AlertMinions(class AActor* AlertInstigator, const FVector& Location, const float Radius);

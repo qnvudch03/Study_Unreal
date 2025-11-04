@@ -46,6 +46,12 @@ protected:
 	UPROPERTY(BlueprintAssignable, Category = "Event")
 	FOnLvChagned OnLvChagned;
 
+public:
+
+
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "Character Type")
+	ECharacterType CharacterType;
+
 
 protected:
 	virtual void CopyProperties(APlayerState* PlayerState) override;

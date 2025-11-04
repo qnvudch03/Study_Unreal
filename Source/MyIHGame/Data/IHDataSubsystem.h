@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "../CharacterStat/CharacterStat.h"
+#include "IHDataAsset.h"
 #include "IHDataSubsystem.generated.h"
 
 /**
@@ -33,4 +34,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UUserWidget> LoadingWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	TArray<UIHDataAsset*>CharacterAssetList;
+
+	UPROPERTY(EditDefaultsOnly, Category = "MY|ChangeCharacterEffect")
+	TObjectPtr<class UNiagaraSystem> ChangeCharacterEffect;
 };

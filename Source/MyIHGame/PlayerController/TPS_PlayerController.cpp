@@ -9,7 +9,10 @@
 #include "OnlineSubsystem.h"
 #include "OnlineSubsystemUtils.h"
 #include "Interfaces/OnlineSessionInterface.h"
+#include "../Data/IHDataSubsystem.h"
+#include "../Player/TPS_PlayerState.h"
 #include "../Instance/TPS_GameInstance.h"
+#include "../Game/IHLobbyMode.h"
 #include "../Character/IHPlayer.h"
 
 void ATPS_PlayerController::BeginPlay()
@@ -21,7 +24,7 @@ void ATPS_PlayerController::BeginPlay()
 		Server_RequestServerTime(GetWorld()->GetTimeSeconds());
 	}
 
-	/*if (HasAuthority())
+	if (HasAuthority())
 	{
 		ATPS_PlayerState* characterState = GetPlayerState<ATPS_PlayerState>();
 		UTPS_GameInstance* gameInstace = GetGameInstance<UTPS_GameInstance>();
@@ -43,7 +46,7 @@ void ATPS_PlayerController::BeginPlay()
 		{
 			player->OnSetPlayerNameWidget(characterState->GetPlayerName());
 		}
-	}*/
+	}
 
 }
 
@@ -92,14 +95,7 @@ void ATPS_PlayerController::OnRep_PlayerState()
 
 }
 
-void ATPS_PlayerController::Client_ShowGameResult_Implementation(EWinningTeam winningTeam)
-{
-	UTPS_GameInstance* gameInstace = GetGameInstance<UTPS_GameInstance>();
-	if (gameInstace == nullptr)
-		return;
 
-	gameInstace->lastWinTeamType = winningTeam;
-}
 
 
 void ATPS_PlayerController::Server_OnPlayerNameAssine_Implementation(ATPS_PlayerController* controller, const FString& name)
@@ -143,14 +139,21 @@ void ATPS_PlayerController::Client_BroadCastUserName_Implementation(ATPS_PlayerC
 					player->OnSetPlayerNameWidget(name);
 
 					ATPS_PlayerState* characterState = GetPlayerState<ATPS_PlayerState>();
-
-					characterState->SetPlayerName(name);
 				}
 
 			}
 		}
 	}
 
+}
+
+void ATPS_PlayerController::Client_ShowGameResult_Implementation(EWinningTeam winningTeam)
+{
+	UTPS_GameInstance* gameInstace = GetGameInstance<UTPS_GameInstance>();
+	if (gameInstace == nullptr)
+		return;
+
+	gameInstace->lastWinTeamType = winningTeam;
 }
 
 void ATPS_PlayerController::Client_MatchState_Implementation(float startTime, float matchTime)
@@ -186,6 +189,38 @@ float ATPS_PlayerController::GetServerTime()
 	}
 
 	return GetWorld()->GetTimeSeconds() + ClientServerDelta;
+}
+
+void ATPS_PlayerController::ChangeCharacter()
+{
+	auto var = GetGameInstance();
+
+	ATPS_PlayerState* PlayerSTate = GetPlayerState< ATPS_PlayerState>();
+
+	if (!PlayerState)
+		return;
+
+	UIHDataSubsystem* DataSubsystem =  GetGameInstance()->GetSubsystem<UIHDataSubsystem>();
+	if (!DataSubsystem)
+		return;
+
+	int32 NextIndex = (((int32)PlayerSTate->CharacterType) + 1) % DataSubsystem->CharacterAssetList.Num();
+	Server_ChangeCharacter((ECharacterType)NextIndex);
+}
+
+void ATPS_PlayerController::Server_ChangeCharacter_Implementation(ECharacterType Charactertype)
+{
+	auto var = GetGameInstance();
+
+	ATPS_PlayerState* PlayerSTate = GetPlayerState< ATPS_PlayerState>();
+	if (!PlayerState)
+		return;
+
+	PlayerSTate->CharacterType = Charactertype;
+
+	AIHLobbyGameeMode* LobbyMode = GetWorld()->GetAuthGameMode<AIHLobbyGameeMode>();
+
+	LobbyMode->ChagnePlayerPawn(this, Charactertype);
 }
 
 void ATPS_PlayerController::Client_ReportServerTime_Implementation(float TimeOfClientRequest, float ServerTime)

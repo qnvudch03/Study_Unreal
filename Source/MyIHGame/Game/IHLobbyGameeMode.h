@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
+#include "../Util/IHDefine.h"
 #include "IHLobbyGameeMode.generated.h"
 
 /**
@@ -25,5 +26,7 @@ public:
 	void RestartPlayer(AController* NewPlyaer) override;
 
 	void PlayerRespawn(ACharacter* DeathCharacter);
+
+	void ChagnePlayerPawn(AController* Player, ECharacterType characterType);
 	
 };

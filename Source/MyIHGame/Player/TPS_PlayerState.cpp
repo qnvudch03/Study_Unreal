@@ -37,6 +37,7 @@ void ATPS_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(ATPS_PlayerState, SkinIndex);
 	DOREPLIFETIME(ATPS_PlayerState, Team);
+	DOREPLIFETIME(ATPS_PlayerState, CharacterType);
 
 }
 
@@ -66,30 +67,28 @@ void ATPS_PlayerState::OnRep_PlayerName()
 {
 	Super::OnRep_PlayerName();
 
-	//player->OnSetPlayerNameWidget(characterState->GetPlayerName());
-
-	if (true)
+	/*if (true)
 	{
-		APlayerController* controller = GetPlayerController();
+		aplayercontroller* controller = getplayercontroller();
 		if (controller == nullptr)
 			return;
 
-		APawn* controlledPawn = Cast<ATPS_PlayerController>(controller)->GetPawn();
+		apawn* controlledpawn = cast<atps_playercontroller>(controller)->getpawn();
 
-		if (controlledPawn == nullptr)
+		if (controlledpawn == nullptr)
 			return;
 
-		AIHPlayer* player = CastChecked<AIHPlayer>(controlledPawn);
+		aihplayer* player = castchecked<aihplayer>(controlledpawn);
 
 		if (player != nullptr)
 		{
-			player->OnSetPlayerNameWidget(GetPlayerName());
+			player->onsetplayernamewidget(getplayername());
 		}
 
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Black, GetPlayerName());
+		gengine->addonscreendebugmessage(-1, 2.0f, fcolor::black, getplayername());
 
 
-	}
+	}*/
 
 	
 }

@@ -10,7 +10,7 @@ void AIHLobbyMode::RestartPlayer(AController* NewPlayer)
 {
 	Super::RestartPlayer(NewPlayer);
 
-	if (NewPlayer)
+	/*if (NewPlayer)
 	{
 		UIHDataSubsystem* DataSubsystem = GetGameInstance()->GetSubsystem<UIHDataSubsystem>();
 
@@ -29,5 +29,5 @@ void AIHLobbyMode::RestartPlayer(AController* NewPlayer)
 		}
 
 		SkinCount = (SkinCount + 1) % DataSubsystem->SkinAssetList.Num();
-	}
+	}*/
 }

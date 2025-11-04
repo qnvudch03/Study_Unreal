@@ -56,6 +56,12 @@ public:
 
 	float LastTimeSynce = 0;
 
+	UFUNCTION(BlueprintCallable)
+	void ChangeCharacter();
+
+	UFUNCTION(Server, Reliable)
+	void Server_ChangeCharacter(ECharacterType Charactertype);
+
 	/*UFUNCTION(Server, Reliable)
 	void Server_PlayerReady();*/
 };

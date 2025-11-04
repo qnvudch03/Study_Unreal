@@ -19,8 +19,10 @@
 #include <GameFramework/PlayerStart.h>
 #include <EngineUtils.h>
 #include "../Instance/TPS_GameInstance.h"
+#include "../Data/IHDataAsset.h"
 #include "../PlayerController/TPS_PlayerController.h"
 #include <Net/OnlineEngineInterface.h>
+#include "IHLobbyMode.h"
 void ATPS_GameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -251,6 +253,32 @@ AActor* ATPS_GameMode::ChoosePlayerStart_Implementation(AController* Player)
 	return FoundPlayerStart;
 }
 
+UClass* ATPS_GameMode::GetDefaultPawnClassForController_Implementation(AController* InController)
+{
+	UIHDataSubsystem* DataSubsystem = GetGameInstance()->GetSubsystem<UIHDataSubsystem>();
+	if (!DataSubsystem)
+		return nullptr;
+
+	ATPS_PlayerState* playerstate = InController->GetPlayerState< ATPS_PlayerState>();
+
+
+	ECharacterType CharacterType = playerstate->CharacterType;
+
+	UIHDataAsset* FindAsset = nullptr;
+	for (auto Iter : DataSubsystem->CharacterAssetList)
+	{
+		if (Iter->Type == CharacterType)
+		{
+			FindAsset = Iter;
+			break;
+		}
+	}
+
+	DefaultPawnClass = FindAsset->BlueprintAsset;
+
+	return nullptr;
+}
+
 void ATPS_GameMode::AlertMinions(AActor* AlertInstigator, const FVector& Location, const float Radius)
 {
 	TArray<AActor*> Minions;
@@ -335,6 +363,7 @@ void ATPS_GameMode::PlayerRespawn(ACharacter* DeathCharacter)
 
 	//RestartPlayerAtPlayerStart(Controller, PlayerStatActors[RandIndex]);
 }
+
 
 void ATPS_GameMode::Logout(AController* Exiting)
 {

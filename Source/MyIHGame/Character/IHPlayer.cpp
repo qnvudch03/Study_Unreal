@@ -145,6 +145,26 @@ void AIHPlayer::BeginPlay()
 		//healthComp->OnDeathEventDelegate.AddDynamic(this, &AIHPlayer::OnDeathEvent);
 		healthComp->OnDeathEventDelegate.AddUObject(this, &AIHPlayer::OnDeathEvent);
 	}
+
+	//캐릭터 교체 시, 임시 숨기기 이펙트
+	UIHDataSubsystem* dataSubSystem = GetGameInstance()->GetSubsystem<UIHDataSubsystem>();
+
+	if (!dataSubSystem)
+		return;
+
+	if (dataSubSystem->ChangeCharacterEffect)
+	{
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation
+		(this, dataSubSystem->ChangeCharacterEffect, GetActorLocation());
+	}
+
+	EVisibilityBasedAnimTickOption AnimOption = GetMesh()->VisibilityBasedAnimTickOption;
+	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+
+	SetActorHiddenInGame(true);
+
+	FTimerHandle ShowMeshTimerHandle;
+	GetWorldTimerManager().SetTimer(ShowMeshTimerHandle, FTimerDelegate::CreateLambda([this]() {SetActorHiddenInGame(false); }), 0.2f, false);
 }
 
 void AIHPlayer::OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState)
